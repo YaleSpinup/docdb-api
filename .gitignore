@@ -1,0 +1,7 @@
+data
+config/config.json
+config/*.swp
+k8s/k8s-config.yaml
+vendor
+.vscode
+debug

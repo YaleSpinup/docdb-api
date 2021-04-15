@@ -3,6 +3,8 @@ package docdb
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/docdb"
 	"github.com/aws/aws-sdk-go/service/docdb/docdbiface"
@@ -41,9 +43,8 @@ func WithSession(sess *session.Session) DocDBOption {
 	}
 }
 
-/*
-func WithCredentials(key, secret, token, region string) ECROption {
-	return func(e *ECR) {
+func WithCredentials(key, secret, token, region string) DocDBOption {
+	return func(e *DocDB) {
 		log.Debugf("creating new session with key id %s in region %s", key, region)
 		sess := session.Must(session.NewSession(&aws.Config{
 			Credentials: credentials.NewStaticCredentials(key, secret, token),
@@ -53,13 +54,12 @@ func WithCredentials(key, secret, token, region string) ECROption {
 	}
 }
 
-func WithDefaultKMSKeyId(keyId string) ECROption {
-	return func(e *ECR) {
+func WithDefaultKMSKeyId(keyId string) DocDBOption {
+	return func(e *DocDB) {
 		log.Debugf("using default kms keyid %s", keyId)
 		e.DefaultKMSKeyId = keyId
 	}
 }
-*/
 
 // ListDB lists documentdb clusters
 func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
@@ -80,6 +80,17 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 func (d *DocDB) CreateDB(ctx context.Context, input *docdb.CreateDBClusterInput) (*docdb.CreateDBClusterOutput, error) {
 
 	out, err := d.Service.CreateDBCluster(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// DeleteDB deletes a documentDB cluster
+func (d *DocDB) DeleteDB(ctx context.Context, input *docdb.DeleteDBClusterInput) (*docdb.DeleteDBClusterOutput, error) {
+
+	out, err := d.Service.DeleteDBCluster(input)
 	if err != nil {
 		return nil, err
 	}

@@ -32,11 +32,31 @@ PUT
 
 /v1/docdb/<AWSAccountID>/mytest-docdb
 
+```JSON
+{
+  "AvailabilityZones": ["us-east-1a", "us-east-1b"],
+  "DBSubnetGroupName": "mysubnetgroup",
+  "Engine": "docdb",
+  "MasterUsername": "userfoo",
+  "MasterUserPassword": "passbar",
+  "Tags": {
+    "ChargeOfAccounts": "123xyz",
+    "Application": "goodstuff",
+  },
+}
+```
+
 ### Delete docdb cluster and instances
 
 DELETE
 
 /v1/docdb/<AWSAccountID>/mytest-docdb
+
+```JSON
+{
+  "SkipFinalSnapshot": "string",
+}
+```
 
 ## Author
 

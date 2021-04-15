@@ -29,10 +29,10 @@ func (s *server) routes() {
 	api.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 
 	api.HandleFunc("/{account}", s.ListDocumentDB).Methods(http.MethodGet)
-	//api.HandleFunc("/{account}/docdb/{name}", s.ShowDocumentDB).Methods(http.MethodGet)
+	//api.HandleFunc("/{account}/{name}", s.ShowDocumentDB).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/{name}", s.CreateDocumentDB).Methods(http.MethodPut)
-	//api.HandleFunc("/{account}/docdb/{name}", s.ModifyDocumentDB).Methods(http.MethodPut)
-	//api.HandleFunc("/{account}/docdb/{name}", s.DeleteDocumentDB).Methods(http.MethodDelete)
+	//api.HandleFunc("/{account}/{name}", s.ModifyDocumentDB).Methods(http.MethodPut)
+	api.HandleFunc("/{account}/{name}", s.DeleteDocumentDB).Methods(http.MethodDelete)
 }
 
 /*

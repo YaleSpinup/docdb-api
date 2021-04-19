@@ -76,8 +76,8 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 	return out, err
 }
 
-// CreateDB creates a documentDB cluster
-func (d *DocDB) CreateDB(ctx context.Context, input *docdb.CreateDBClusterInput) (*docdb.CreateDBClusterOutput, error) {
+// CreateDBCluster creates a documentDB cluster
+func (d *DocDB) CreateDBCluster(ctx context.Context, name string, input *docdb.CreateDBClusterInput) (*docdb.CreateDBClusterOutput, error) {
 
 	out, err := d.Service.CreateDBCluster(input)
 	if err != nil {
@@ -87,10 +87,35 @@ func (d *DocDB) CreateDB(ctx context.Context, input *docdb.CreateDBClusterInput)
 	return out, nil
 }
 
-// DeleteDB deletes a documentDB cluster
-func (d *DocDB) DeleteDB(ctx context.Context, input *docdb.DeleteDBClusterInput) (*docdb.DeleteDBClusterOutput, error) {
+// CreateDBInstance creates a documentDB instance
+func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInstanceInput) (*docdb.CreateDBInstanceOutput, error) {
+
+	out, err := d.Service.CreateDBInstance(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// DeleteDBCluster deletes a documentDB cluster
+func (d *DocDB) DeleteDBCluster(ctx context.Context, input *docdb.DeleteDBClusterInput) (*docdb.DeleteDBClusterOutput, error) {
+
+	log.Debugf("Delete documentDB clusters: %s\n", input.DBClusterIdentifier)
+	log.Debugf("GOOGLEY DeleteDBCluster input: %s\n", input)
 
 	out, err := d.Service.DeleteDBCluster(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// DeleteDBInstance deletes a documentDB instance
+func (d *DocDB) DeleteDBInstance(ctx context.Context, input *docdb.DeleteDBInstanceInput) (*docdb.DeleteDBInstanceOutput, error) {
+
+	out, err := d.Service.DeleteDBInstance(input)
 	if err != nil {
 		return nil, err
 	}

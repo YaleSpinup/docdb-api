@@ -3,12 +3,9 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/YaleSpinup/apierror"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/docdb"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
@@ -22,7 +19,6 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
-	name := vars["name"]
 
 	log.Infoln("create documentBDs")
 
@@ -41,47 +37,25 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//client := db.New(db.WithSession(sess.Session))
-
-	//req := CreateDocDB{}
-	req := docdb.CreateDBClusterInput{}
+	req := CreateDocDB{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		msg := fmt.Sprintf("cannot decode body into create repository input: %s", err)
+		msg := fmt.Sprintf("cannot decode body into create documentdb input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
+
+	log.Debugf("GOOGLEY create data input: %s\n", req)
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
 		s.org,
 	)
 
-	resp, err := orch.createDocumentDB(r.Context(), name, &req)
+	resp, err := orch.createDocumentDB(r.Context(), &req)
 	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to create repository"))
+		handleError(w, errors.Wrap(err, "failed to create documentDBs"))
 		return
 	}
-
-	/*
-		input := CreateDocDBClusterInput{
-			AvailabilityZones: []*string{
-				aws.String("us-east-1a"),
-				aws.String("us-east-1d"),
-			},
-			DBClusterIdentifier: aws.String(name),
-			DBSubnetGroupName:   aws.String("default-vpc-0e7363e700630fab5"),
-			Engine:              aws.String("docdb"),
-			MasterUsername:      aws.String("foobarusername"),
-			MasterUserPassword:  aws.String("foobarbazboo"),
-			//Tags: "[]",
-		}
-
-		out, err := client.CreateDB(r.Context(), &input)
-		if err != nil {
-			handleError(w, err)
-			return
-		}
-	*/
 
 	j, err := json.Marshal(resp)
 	if err != nil {
@@ -99,24 +73,9 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
-	name := vars["name"]
 
 	log.Infoln("delete documentBD cluster")
 
-	// get request of body
-	raw, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		handleError(w, err)
-		return
-	}
-	defer r.Body.Close()
-
-	data := DeleteDocDB{}
-	if err := json.Unmarshal(raw, &data); err != nil {
-		handleError(w, err)
-	}
-
-	// get assumerole
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
 	sess, err := s.assumeRole(
@@ -132,21 +91,26 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := db.New(db.WithSession(sess.Session))
-
-	input := docdb.DeleteDBClusterInput{
-		DBClusterIdentifier:       aws.String(name),
-		SkipFinalSnapshot:         aws.Bool(data.SkipFinalSnapshot),
-		FinalDBSnapshotIdentifier: aws.String(data.FinalDBSnapshotIdentifier),
-	}
-
-	out, err := client.DeleteDBCluster(r.Context(), &input)
-	if err != nil {
-		handleError(w, err)
+	//req := docdb.DeleteDBClusterInput{}
+	req := DeleteDocDB{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		msg := fmt.Sprintf("cannot decode body into delete documentdb input: %s", err)
+		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
 
-	j, err := json.Marshal(out)
+	orch := newDocDBOrchestrator(
+		db.New(db.WithSession(sess.Session)),
+		s.org,
+	)
+
+	resp, err := orch.deleteDocumentDB(r.Context(), &req)
+	if err != nil {
+		handleError(w, errors.Wrap(err, "failed to delete documentDBs"))
+		return
+	}
+
+	j, err := json.Marshal(resp)
 	if err != nil {
 		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
 		return
@@ -156,13 +120,6 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
 }
-
-/*
-//DeleteDocumentDBCluster deletes documentDB instances and clusters
-func (s *server) DeleteDocumentDBCluster(ctx context.Context, data *DeleteDocumentDBRequest) error {
-
-}
-*/
 
 // ListDocumentDb lists documentDBs
 func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
@@ -180,7 +137,7 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 		s.session.ExternalID,
 		role,
 		"",
-		"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess",
+		"arn:aws:iam::aws:policy/AmazonDocDBFullAccess",
 	)
 	if err != nil {
 		msg := fmt.Sprintf("failed to assume role in account: %s", account)
@@ -188,7 +145,20 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := db.New(db.WithSession(sess.Session))
+	orch := newDocDBOrchestrator(
+		db.New(db.WithSession(sess.Session)),
+		s.org,
+	)
+
+	//input := docdb.DescribeDBClustersInput{}
+
+	resp, err := orch.listDocumentDB(r.Context())
+	if err != nil {
+		handleError(w, errors.Wrap(err, "failed to list documentDBs"))
+		return
+	}
+
+	//client := db.New(db.WithSession(sess.Session))
 
 	/*
 		input := docdb.DescribeDBClustersInput{
@@ -204,15 +174,18 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	*/
-	input := docdb.DescribeDBClustersInput{}
 
-	out, err := client.ListDB(r.Context(), &input)
-	if err != nil {
-		handleError(w, err)
-		return
-	}
+	/*
+		input := docdb.DescribeDBClustersInput{}
 
-	j, err := json.Marshal(out)
+		out, err := client.ListDB(r.Context(), &input)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+	*/
+
+	j, err := json.Marshal(resp)
 	if err != nil {
 		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
 		return

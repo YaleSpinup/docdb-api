@@ -9,9 +9,9 @@ GET /v1/docdb/ping
 GET /v1/docdb/version
 GET /v1/docdb/metrics
 
-GET /v1/docdb/{account}/docdb
-PUT /v1/docdb/{account}/docdb/{name}
-DELETE /v1/docdb/{account}/docdb/{name}
+GET /v1/docdb/{account}
+PUT /v1/docdb/{account}/{name}
+DELETE /v1/docdb/{account}/{name}
 ```
 
 ## Authentication
@@ -34,15 +34,18 @@ PUT
 
 ```JSON
 {
-  "AvailabilityZones": ["us-east-1a", "us-east-1b"],
-  "DBSubnetGroupName": "mysubnetgroup",
+  "AvailabilityZones": ["us-east-1a","us-east-1d", "us-east-1b"],
+  "DBClusterIdentifier": "bestDocDBCluster",
+  "DBSubnetGroupName": "a-subnetgroup-name",
   "Engine": "docdb",
-  "MasterUsername": "userfoo",
-  "MasterUserPassword": "passbar",
-  "Tags": {
-    "ChargeOfAccounts": "123xyz",
-    "Application": "goodstuff",
-  },
+  "MasterUsername": "foobarusername",
+  "MasterUserPassword": "foobarbazboo",
+  "Tags": [
+    {
+      "CreatedBy": "tom",
+      "ChargingAccount": "xyz"
+    }
+  ]
 }
 ```
 
@@ -54,7 +57,7 @@ DELETE
 
 ```JSON
 {
-  "SkipFinalSnapshot": "string",
+  "SkipFinalSnapshot": true,
 }
 ```
 

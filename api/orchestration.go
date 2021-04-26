@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	//"github.com/YaleSpinup/docdb-api/docdb"
-
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/docdb"
@@ -13,13 +11,15 @@ import (
 )
 
 // createDocumentDB creates documentDB cluster and instances
-func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDocDB) (string, error) {
+func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDocDB) ([]string, error) {
 	if &data.InstanceCount == nil {
-		return "", apierror.New(apierror.ErrBadRequest, "invalid data: missing InstanceCount", nil)
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid data: missing InstanceCount", nil)
 	}
 
+	output := []string{}
+
 	log.Debugf("Creating documentDB instances and cluster: %s\n", data.DBClusterIdentifier)
-	log.Debugf("GOOGLEY ctx: %s\n", ctx)
+
 	log.Debugf("GOOGLEY data: %s\n", data)
 	log.Debugf("GOOGLEY tags: %s\n", data.Tags)
 
@@ -48,14 +48,17 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 		Tags:                tags,
 	}
 
+	log.Debugf("tags input: %s\n", input)
 	clusterCreateStatus, err := o.client.CreateDBCluster(ctx, data.DBClusterIdentifier, &input)
 	if err != nil {
-		return "failed to create db cluster", err
+		return []string{"failed to create db cluster"}, err
 	}
 
-	log.Debugf("GOOGLEY mydata: %s\n", clusterCreateStatus)
+	output = append(output, fmt.Sprint(clusterCreateStatus))
 
 	// create instances based on InstanceCount sent in
+	// don't begin a 0 instance
+	data.InstanceCount++
 	for i := 1; i < data.InstanceCount; i++ {
 		// normalize instanceName
 		instanceName := fmt.Sprintf("%s-%v", data.DBClusterIdentifier, i)
@@ -71,19 +74,16 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 			PromotionTier:              &data.PromotionTier,
 		}
 
-		log.Debugf("GOOGLEY instanceData: %s\n", instanceData)
-		log.Debugf("GOOGLEY instanceName: %s\n", instanceName)
-		//return "", apierror.New(apierror.ErrBadRequest, "just return tags, and not actually create anything", nil)
-
 		instanceCreateStatus, err := o.client.CreateDBInstance(ctx, &instanceData)
 		if err != nil {
-			return "failed to create db instance: ", err
+			return []string{"failed to create db instance: "}, err
 		}
 
-		log.Debugf("GOOGLEY instanceCreateStatus: %s\n", instanceCreateStatus)
+		output = append(output, fmt.Sprint(instanceCreateStatus))
 
 	}
-	return "", nil
+
+	return output, nil
 
 }
 
@@ -92,14 +92,28 @@ func (o *docDBOrchestrator) listDocumentDB(ctx context.Context) (*docdb.Describe
 
 	input := docdb.DescribeDBClustersInput{}
 
-	DBList, err := o.client.ListDB(ctx, &input)
+	dbList, err := o.client.ListDB(ctx, &input)
 	if err != nil {
-		//return "failed to list DBs", err
-		return nil, apierror.New(apierror.ErrBadRequest, "failed to list documentDBs", nil)
+		return nil, apierror.New(apierror.ErrBadRequest, "failed to list documentDBs", err)
 	}
 
-	return DBList, nil
+	return dbList, nil
 
+}
+
+// getDocumentDB gets data on a documentDB cluster+instance
+func (o *docDBOrchestrator) getDocumentDB(ctx context.Context, name string) (*docdb.DescribeDBClustersOutput, error) {
+
+	input := docdb.DescribeDBClustersInput{
+		DBClusterIdentifier: aws.String(name),
+	}
+
+	documentDB, err := o.client.GetDB(ctx, &input)
+	if err != nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "failed to get documentDB", err)
+	}
+
+	return documentDB, nil
 }
 
 // deleteDocumentDB deletes documentDB instances and cluster
@@ -116,7 +130,7 @@ func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, data *DeleteDo
 
 		instanceDeleteStatus, err := o.client.DeleteDBInstance(ctx, &instanceDeleteInput)
 		if err != nil {
-			return "Failed to delete db instance: ", err
+			log.Infof("Failed to delete db instance: %s\n", err)
 		}
 
 		log.Debugf("instanceDeleteStatus: %s\n", instanceDeleteStatus)
@@ -133,7 +147,7 @@ func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, data *DeleteDo
 		return "failed to delete db cluster: ", err
 	}
 
-	log.Debugf("GOOGLEY clusterDeleteStatus: %s\n", clusterDeleteStatus)
+	log.Debugf("clusterDeleteStatus: %s\n", clusterDeleteStatus)
 
 	return "", nil
 

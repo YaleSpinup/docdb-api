@@ -8,20 +8,12 @@ type DeleteDocDB struct {
 	InstanceNames             []string
 }
 
-// Tags provides metadata and billing information
-type Tags struct {
-	ChargingAccount     string
-	OwnedBy             string
-	OwnedByDepartment   string
-	CreatedBy           string
-	CreatedByDeptarment string
-	Application         string
-}
-
 // Tag provides metadata and billing information
 type Tag struct {
-	Key   *string `type:"string"`
-	Value *string `type:"string"`
+	Key   *string
+	Value *string
+	//Key   *string `type:"string"`
+	//Value *string `type:"string"`
 }
 
 // CreateDocDB is data used to create a documentDB
@@ -37,4 +29,23 @@ type CreateDocDB struct {
 	MaintenanceWindow   string
 	PromotionTier       int64
 	Tags                []*Tag
+}
+
+// ClusterMember is a map of cluster member info
+type ClusterMember struct {
+	DBClusterParameterGroupStatus string
+	DBInstanceIdentifier          string
+	IsClusterWriter               bool
+	PromotionTier                 int64
+}
+
+// Something is a bunch of list returned things
+type Something struct {
+	DBClusterIdentifier string
+	DBClusterMembers    map[string]ClusterMember
+}
+
+// ListDBReturn shows a subset of returned data
+type ListDBReturn struct {
+	DBClusters map[string]Something
 }

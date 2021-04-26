@@ -41,10 +41,8 @@ PUT
   "MasterUsername": "foobarusername",
   "MasterUserPassword": "foobarbazboo",
   "Tags": [
-    {
-      "CreatedBy": "tom",
-      "ChargingAccount": "xyz"
-    }
+    { "Key": "CreatedBy", "Value": "tom"},
+    { "Key": "ChargingAccount", "Value": "xyz"}
   ]
 }
 ```

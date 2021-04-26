@@ -11,8 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// https://github.com/aws/aws-sdk-go/blob/main/service/docdb/docdbiface/interface.go
-
 // DocDB is a wrapper around the aws docdb service
 type DocDB struct {
 	session         *session.Session
@@ -65,15 +63,24 @@ func WithDefaultKMSKeyId(keyId string) DocDBOption {
 func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
 	log.Info("listing documentDB clusters")
 
-	// List clusters
 	out, err := d.Service.DescribeDBClusters(input)
 	if err != nil {
-		//msg := fmt.Sprint("failed to get documentDB list")
-		// return nil, ErrCode("failed to list documentDBs", err)
 		return nil, err
 	}
 
 	return out, err
+}
+
+// GetDB gets information on a documentDB cluster+instance
+func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
+
+	out, err := d.Service.DescribeDBClusters(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, err
+
 }
 
 // CreateDBCluster creates a documentDB cluster
@@ -100,9 +107,6 @@ func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInsta
 
 // DeleteDBCluster deletes a documentDB cluster
 func (d *DocDB) DeleteDBCluster(ctx context.Context, input *docdb.DeleteDBClusterInput) (*docdb.DeleteDBClusterOutput, error) {
-
-	log.Debugf("Delete documentDB clusters: %s\n", input.DBClusterIdentifier)
-	log.Debugf("GOOGLEY DeleteDBCluster input: %s\n", input)
 
 	out, err := d.Service.DeleteDBCluster(input)
 	if err != nil {

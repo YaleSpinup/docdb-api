@@ -1,5 +1,7 @@
 package api
 
+import "time"
+
 // DeleteDocDB is data used to delete a documentDB
 type DeleteDocDB struct {
 	FinalDBSnapshotIdentifier string
@@ -12,8 +14,6 @@ type DeleteDocDB struct {
 type Tag struct {
 	Key   *string
 	Value *string
-	//Key   *string `type:"string"`
-	//Value *string `type:"string"`
 }
 
 // CreateDocDB is data used to create a documentDB
@@ -49,4 +49,38 @@ type Something struct {
 // ListDBReturn shows a subset of returned data
 type ListDBReturn struct {
 	DBClusters map[string]Something
+}
+
+//DBInstance helps us collect useful data from the upstream instance create call output
+type DBInstance struct {
+	AvailabilityZone      string
+	BackupRetentionPeriod string
+	DBInstanceArn         string
+	DBInstanceClass       string
+	DBInstanceStatus      string
+	DBInstanceIdentifier  string
+	DBSubnetGroup         string
+	Endpoint              string
+	Engine                string
+	EngineVersion         string
+	InstanceCreateTime    time.Time
+	KmsKeyId              string
+	ReaderEndpoint        string
+	StorageEncrypted      bool
+}
+
+//DBCluster helps us collect useful data from the upstream Cluster create call output
+type DBCluster struct {
+	DBClusterArn        string
+	DBClusterIdentifier string
+	Endpoint            string
+	ReaderEndpoint      string
+	StorageEncrypted    bool
+	DBSubnetGroup       string
+	DBInstances         []*DBInstance
+}
+
+// Cluster is the DBCluster outer JSON Key
+type Cluster struct {
+	DBClusters DBCluster
 }

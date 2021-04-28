@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
@@ -47,40 +46,9 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 
 	clusterCreateStatus, err := o.client.CreateDBCluster(ctx, data.DBClusterIdentifier, &input)
 	if err != nil {
+		// fixme - the err doesn't seem to be returning to the caller, to the user, and it
+		// probably will be helpful
 		return nil, apierror.New(apierror.ErrBadRequest, "failed to create db cluster", err)
-	}
-
-	//DBInstance helps us collect useful data from the upstream instance create call output
-	type DBInstance struct {
-		AvailabilityZone      string
-		BackupRetentionPeriod string
-		DBInstanceArn         string
-		DBInstanceClass       string
-		DBInstanceStatus      string
-		DBInstanceIdentifier  string
-		DBSubnetGroup         string
-		Endpoint              string
-		Engine                string
-		EngineVersion         string
-		InstanceCreateTime    time.Time
-		KmsKeyId              string
-		ReaderEndpoint        string
-		StorageEncrypted      bool
-	}
-
-	//DBCluster helps us collect useful data from the upstream Cluster create call output
-	type DBCluster struct {
-		DBClusterArn        string
-		DBClusterIdentifier string
-		Endpoint            string
-		ReaderEndpoint      string
-		StorageEncrypted    bool
-		DBSubnetGroup       string
-		DBInstances         []*DBInstance
-	}
-
-	type Cluster struct {
-		DBClusters DBCluster
 	}
 
 	clusterOut := Cluster{
@@ -92,12 +60,6 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 			StorageEncrypted:    *clusterCreateStatus.DBCluster.StorageEncrypted,
 			DBSubnetGroup:       *clusterCreateStatus.DBCluster.DBSubnetGroup,
 		},
-	}
-
-	marshaledData, err := json.Marshal(clusterOut)
-	if err != nil {
-		log.Debugf("GOOGLEY thing: %s", err)
-		//return nil, apierror.New(apierror.ErrInternalError, "failed to create db cluster", err)
 	}
 
 	output = append(output, fmt.Sprint(clusterCreateStatus))
@@ -137,6 +99,11 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 		output = append(output, fmt.Sprint(instanceCreateStatus))
 		log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
 
+	}
+
+	marshaledData, err := json.Marshal(clusterOut)
+	if err != nil {
+		return nil, apierror.New(apierror.ErrInternalError, "failed to marshal docdb output", err)
 	}
 
 	return marshaledData, nil

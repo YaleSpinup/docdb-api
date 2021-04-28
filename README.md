@@ -20,17 +20,24 @@ Authentication is accomplished via an encrypted pre-shared key passed via the `X
 
 ## Usage
 
-### List docdbs
+### Lists all docdbs
 
 GET
 
 /v1/docdb/<AWSAccountID>
 
+### Get shows a single docdb
+
+GET
+
+/v1/docdb/<AWSAccountID>/<mytest-docdb>
+
+
 ### Create docdb cluster and instances
 
 PUT
 
-/v1/docdb/<AWSAccountID>/mytest-docdb
+/v1/docdb/<AWSAccountID>/<mytest-docdb>
 
 ```JSON
 {
@@ -38,8 +45,8 @@ PUT
   "DBClusterIdentifier": "bestDocDBCluster",
   "DBSubnetGroupName": "a-subnetgroup-name",
   "Engine": "docdb",
-  "MasterUsername": "foobarusername",
-  "MasterUserPassword": "foobarbazboo",
+  "MasterUsername": "foousername",
+  "MasterUserPassword": "foobarbizbazboo",
   "Tags": [
     { "Key": "CreatedBy", "Value": "tom"},
     { "Key": "ChargingAccount", "Value": "xyz"}
@@ -51,11 +58,18 @@ PUT
 
 DELETE
 
-/v1/docdb/<AWSAccountID>/mytest-docdb
+/v1/docdb/<AWSAccountID>/<mytest-docdb>
 
 ```JSON
 {
-  "SkipFinalSnapshot": true,
+  "ClusterName": "mytest-docdb",
+  "InstanceNames":
+    [
+        "dkwrocks-1",
+        "dkwrocks-2",
+        "dkwrocks-3"
+    ],
+  "SkipFinalSnapshot": true
 }
 ```
 

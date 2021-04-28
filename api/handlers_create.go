@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	db "github.com/YaleSpinup/docdb-api/docdb"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,7 +20,7 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 	account := vars["account"]
 	name := vars["name"]
 
-	log.Infof("create documentBD: %s\n", name)
+	log.Infof("create documentBD cluster and instance(s): %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -57,18 +56,6 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//for _, i := range resp {
-	//log.Infof("GOOGLEY resp: %s\n\n", i)
-	//}
-
-	/*
-		j, err := json.Marshal(resp)
-		if err != nil {
-			handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
-			return
-		}
-	*/
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
@@ -79,8 +66,9 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
+	name := vars["name"]
 
-	log.Infoln("delete documentBD cluster")
+	log.Infof("delete documentBD cluster and instance(s): %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -118,7 +106,7 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 
 	j, err := json.Marshal(resp)
 	if err != nil {
-		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed to marshal json", err))
 		return
 	}
 
@@ -164,7 +152,7 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 
 	j, err := json.Marshal(resp)
 	if err != nil {
-		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
+		handleError(w, apierror.New(apierror.ErrInternalError, "failed to marshal json", err))
 		return
 	}
 
@@ -206,8 +194,7 @@ func (s *server) GetDocumentDB(w http.ResponseWriter, r *http.Request) {
 	resp, err := orch.getDocumentDB(r.Context(), name)
 	if err != nil {
 		msg := fmt.Sprintf("failed to get documentDB: %s\n", name)
-		//handleError(w, errors.Wrap(err, "failed to get documentDB"))
-		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
+		handleError(w, apierror.New(apierror.ErrInternalError, msg, err))
 		return
 	}
 

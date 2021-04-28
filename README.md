@@ -45,7 +45,10 @@ PUT
   "AvailabilityZones": ["us-east-1a","us-east-1d", "us-east-1b"],
   "DBClusterIdentifier": "bestDocDBCluster",
   "DBSubnetGroupName": "a-subnetgroup-name",
+  "DBInstanceClass": "db.t3.medium",
   "Engine": "docdb",
+  "InstanceCount": "1",
+  "MaintenanceWindow": "Sun:04:00-Sun:04:30",
   "MasterUsername": "foousername",
   "MasterUserPassword": "foobarbizbazboo",
   "Tags": [

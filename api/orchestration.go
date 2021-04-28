@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,7 +13,7 @@ import (
 )
 
 // createDocumentDB creates documentDB cluster and instances
-func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDocDB) ([]string, error) {
+func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDocDB) ([]byte, error) {
 	if &data.InstanceCount == nil {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid data: missing InstanceCount", nil)
 	}
@@ -19,9 +21,6 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 	output := []string{}
 
 	log.Debugf("Creating documentDB instances and cluster: %s\n", data.DBClusterIdentifier)
-
-	log.Debugf("GOOGLEY data: %s\n", data)
-	log.Debugf("GOOGLEY tags: %s\n", data.Tags)
 
 	tags := make([]*docdb.Tag, 0, len(data.Tags))
 
@@ -31,9 +30,6 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 			Value: (t.Value),
 		})
 	}
-
-	log.Debugf("GOOGLEY data.Tags: %s\n", data.Tags)
-	log.Debugf("GOOGLEY tags: %s\n", tags)
 
 	input := docdb.CreateDBClusterInput{
 		AvailabilityZones: []*string{
@@ -45,13 +41,63 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 		Engine:              &data.Engine,
 		MasterUsername:      &data.MasterUsername,
 		MasterUserPassword:  &data.MasterUserPassword,
+		StorageEncrypted:    &data.StorageEncrypted,
 		Tags:                tags,
 	}
 
-	log.Debugf("tags input: %s\n", input)
 	clusterCreateStatus, err := o.client.CreateDBCluster(ctx, data.DBClusterIdentifier, &input)
 	if err != nil {
-		return []string{"failed to create db cluster"}, err
+		return nil, apierror.New(apierror.ErrBadRequest, "failed to create db cluster", err)
+	}
+
+	//DBInstance helps us collect useful data from the upstream instance create call output
+	type DBInstance struct {
+		AvailabilityZone      string
+		BackupRetentionPeriod string
+		DBInstanceArn         string
+		DBInstanceClass       string
+		DBInstanceStatus      string
+		DBInstanceIdentifier  string
+		DBSubnetGroup         string
+		Endpoint              string
+		Engine                string
+		EngineVersion         string
+		InstanceCreateTime    time.Time
+		KmsKeyId              string
+		ReaderEndpoint        string
+		StorageEncrypted      bool
+	}
+
+	//DBCluster helps us collect useful data from the upstream Cluster create call output
+	type DBCluster struct {
+		DBClusterArn        string
+		DBClusterIdentifier string
+		Endpoint            string
+		ReaderEndpoint      string
+		StorageEncrypted    bool
+		DBSubnetGroup       string
+		DBInstances         []*DBInstance
+	}
+
+	type Cluster struct {
+		DBClusters DBCluster
+	}
+
+	clusterOut := Cluster{
+		DBClusters: DBCluster{
+			DBClusterArn:        *clusterCreateStatus.DBCluster.DBClusterArn,
+			DBClusterIdentifier: *clusterCreateStatus.DBCluster.DBClusterIdentifier,
+			Endpoint:            *clusterCreateStatus.DBCluster.Endpoint,
+			ReaderEndpoint:      *clusterCreateStatus.DBCluster.ReaderEndpoint,
+			StorageEncrypted:    *clusterCreateStatus.DBCluster.StorageEncrypted,
+			DBSubnetGroup:       *clusterCreateStatus.DBCluster.DBSubnetGroup,
+		},
+	}
+
+	marshaledData, err := json.Marshal(clusterOut)
+	if err != nil {
+		log.Debugf("GOOGLEY thing: %s", err)
+		//return nil, apierror.New(apierror.ErrInternalError, "failed to create db cluster", err)
 	}
 
 	output = append(output, fmt.Sprint(clusterCreateStatus))
@@ -76,14 +122,24 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 
 		instanceCreateStatus, err := o.client.CreateDBInstance(ctx, &instanceData)
 		if err != nil {
-			return []string{"failed to create db instance: "}, err
+			//return []string{"failed to create db instance: "}, err
+			return nil, apierror.New(apierror.ErrBadRequest, "failed to create db instances", err)
 		}
 
+		/*
+			blah := DBInstance{
+					DBInstanceArn:        *instanceCreateStatus.DBInstance.DBInstanceArn,
+					DBInstanceIdentifier: *instanceCreateStatus.DBInstance.DBInstanceIdentifier,
+				}
+			}
+		*/
+
 		output = append(output, fmt.Sprint(instanceCreateStatus))
+		log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
 
 	}
 
-	return output, nil
+	return marshaledData, nil
 
 }
 

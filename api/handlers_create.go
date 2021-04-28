@@ -57,19 +57,21 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, i := range resp {
-		log.Infof(i)
-	}
+	//for _, i := range resp {
+	//log.Infof("GOOGLEY resp: %s\n\n", i)
+	//}
 
-	j, err := json.Marshal(resp)
-	if err != nil {
-		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
-		return
-	}
+	/*
+		j, err := json.Marshal(resp)
+		if err != nil {
+			handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
+			return
+		}
+	*/
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(j)
+	w.Write(resp)
 }
 
 // DeleteDocumentDB handles and organizes calls to deletes a DocumentDB cluster

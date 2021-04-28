@@ -28,6 +28,7 @@ type CreateDocDB struct {
 	MasterUserPassword  string
 	MaintenanceWindow   string
 	PromotionTier       int64
+	StorageEncrypted    bool
 	Tags                []*Tag
 }
 

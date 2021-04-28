@@ -51,18 +51,9 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 		return nil, apierror.New(apierror.ErrBadRequest, "failed to create db cluster", err)
 	}
 
-	clusterOut := Cluster{
-		DBClusters: DBCluster{
-			DBClusterArn:        *clusterCreateStatus.DBCluster.DBClusterArn,
-			DBClusterIdentifier: *clusterCreateStatus.DBCluster.DBClusterIdentifier,
-			Endpoint:            *clusterCreateStatus.DBCluster.Endpoint,
-			ReaderEndpoint:      *clusterCreateStatus.DBCluster.ReaderEndpoint,
-			StorageEncrypted:    *clusterCreateStatus.DBCluster.StorageEncrypted,
-			DBSubnetGroup:       *clusterCreateStatus.DBCluster.DBSubnetGroup,
-		},
-	}
-
 	output = append(output, fmt.Sprint(clusterCreateStatus))
+
+	allInstances := []*DBInstance{}
 
 	// create instances based on InstanceCount sent in
 	// don't begin a 0 instance
@@ -72,7 +63,8 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 		instanceName := fmt.Sprintf("%s-%v", data.DBClusterIdentifier, i)
 
 		instanceData := docdb.CreateDBInstanceInput{
-			AutoMinorVersionUpgrade:    aws.Bool(true),
+			AutoMinorVersionUpgrade: aws.Bool(true),
+			// FIXME - use client input here
 			AvailabilityZone:           aws.String("us-east-1a"),
 			DBInstanceClass:            &data.DBInstanceClass,
 			DBClusterIdentifier:        &data.DBClusterIdentifier,
@@ -88,20 +80,31 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDo
 			return nil, apierror.New(apierror.ErrBadRequest, "failed to create db instances", err)
 		}
 
-		/*
-			blah := DBInstance{
-					DBInstanceArn:        *instanceCreateStatus.DBInstance.DBInstanceArn,
-					DBInstanceIdentifier: *instanceCreateStatus.DBInstance.DBInstanceIdentifier,
-				}
-			}
-		*/
+		loopInstance := new(DBInstance)
+
+		loopInstance.DBInstanceArn = *instanceCreateStatus.DBInstance.DBInstanceArn
+		loopInstance.DBInstanceIdentifier = *instanceCreateStatus.DBInstance.DBInstanceIdentifier
+
+		allInstances = append(allInstances, loopInstance)
 
 		output = append(output, fmt.Sprint(instanceCreateStatus))
 		log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
 
 	}
 
-	marshaledData, err := json.Marshal(clusterOut)
+	createOut := Cluster{
+		DBClusters: DBCluster{
+			DBClusterArn:        *clusterCreateStatus.DBCluster.DBClusterArn,
+			DBClusterIdentifier: *clusterCreateStatus.DBCluster.DBClusterIdentifier,
+			Endpoint:            *clusterCreateStatus.DBCluster.Endpoint,
+			ReaderEndpoint:      *clusterCreateStatus.DBCluster.ReaderEndpoint,
+			StorageEncrypted:    *clusterCreateStatus.DBCluster.StorageEncrypted,
+			DBSubnetGroup:       *clusterCreateStatus.DBCluster.DBSubnetGroup,
+			DBInstances:         allInstances,
+		},
+	}
+
+	marshaledData, err := json.Marshal(createOut)
 	if err != nil {
 		return nil, apierror.New(apierror.ErrInternalError, "failed to marshal docdb output", err)
 	}
@@ -172,6 +175,6 @@ func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, data *DeleteDo
 
 	log.Debugf("clusterDeleteStatus: %s\n", clusterDeleteStatus)
 
-	return "", nil
+	return "{OK}", nil
 
 }

@@ -10,6 +10,7 @@ GET /v1/docdb/version
 GET /v1/docdb/metrics
 
 GET /v1/docdb/{account}
+GET /v1/docdb/{account}/name
 PUT /v1/docdb/{account}/{name}
 DELETE /v1/docdb/{account}/{name}
 ```
@@ -24,20 +25,20 @@ Authentication is accomplished via an encrypted pre-shared key passed via the `X
 
 GET
 
-/v1/docdb/<AWSAccountID>
+/v1/docdb/{account}
 
-### Get shows a single docdb
+### Get a single docdb
 
 GET
 
-/v1/docdb/<AWSAccountID>/<mytest-docdb>
+/v1/docdb/{account}/{name}
 
 
 ### Create docdb cluster and instances
 
 PUT
 
-/v1/docdb/<AWSAccountID>/<mytest-docdb>
+/v1/docdb/{account}/{name}
 
 ```JSON
 {
@@ -49,7 +50,7 @@ PUT
   "MasterUserPassword": "foobarbizbazboo",
   "Tags": [
     { "Key": "CreatedBy", "Value": "tom"},
-    { "Key": "ChargingAccount", "Value": "xyz"}
+    { "Key": "MoneyMatters", "Value": "IT"}
   ]
 }
 ```
@@ -58,16 +59,16 @@ PUT
 
 DELETE
 
-/v1/docdb/<AWSAccountID>/<mytest-docdb>
+/v1/docdb/{account}/{name}
 
 ```JSON
 {
   "ClusterName": "mytest-docdb",
   "InstanceNames":
     [
-        "dkwrocks-1",
-        "dkwrocks-2",
-        "dkwrocks-3"
+        "mytest-docdb-1",
+        "mytest-docdb-2",
+        "mytest-docdb-3"
     ],
   "SkipFinalSnapshot": true
 }

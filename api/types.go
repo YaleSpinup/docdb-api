@@ -32,25 +32,6 @@ type CreateDocDB struct {
 	Tags                []*Tag
 }
 
-// ClusterMember is a map of cluster member info
-type ClusterMember struct {
-	DBClusterParameterGroupStatus string
-	DBInstanceIdentifier          string
-	IsClusterWriter               bool
-	PromotionTier                 int64
-}
-
-// Something is a bunch of list returned things
-type Something struct {
-	DBClusterIdentifier string
-	DBClusterMembers    map[string]ClusterMember
-}
-
-// ListDBReturn shows a subset of returned data
-type ListDBReturn struct {
-	DBClusters map[string]Something
-}
-
 //DBInstance helps us collect useful data from the upstream instance create call output
 type DBInstance struct {
 	AvailabilityZone      string

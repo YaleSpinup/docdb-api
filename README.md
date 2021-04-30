@@ -43,7 +43,7 @@ PUT
 ```JSON
 {
   "AvailabilityZones": ["us-east-1a","us-east-1d", "us-east-1b"],
-  "DBClusterIdentifier": "bestDocDBCluster",
+  "DBClusterIdentifier": "bestDocDB",
   "DBSubnetGroupName": "a-subnetgroup-name",
   "DBInstanceClass": "db.t3.medium",
   "Engine": "docdb",
@@ -56,6 +56,72 @@ PUT
     { "Key": "MoneyMatters", "Value": "IT"}
   ]
 }
+```
+
+Response:
+
+```JSON
+{
+  "DBClusters": {
+    "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:bestDocDB",
+    "DBClusterIdentifier": "bestDocDB",
+    "Endpoint": "bestDocDB.cluster-cp7kklfeaq3g.us-east-1.docdb.amazonaws.com",
+    "ReaderEndpoint": "bestDocDB.cluster-ro-cp7kklfeaq3g.us-east-1.docdb.amazonaws.com",
+    "StorageEncrypted": false,
+    "DBSubnetGroup": "default-vpc-0e7363e700630fab5",
+    "DBInstances": [
+      {
+        "AvailabilityZone": "",
+        "BackupRetentionPeriod": "",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:516855177326:db:dkwrocks-1",
+        "DBInstanceClass": "",
+        "DBInstanceStatus": "",
+        "DBInstanceIdentifier": "dkwrocks-1",
+        "DBSubnetGroup": "",
+        "Endpoint": "",
+        "Engine": "",
+        "EngineVersion": "",
+        "InstanceCreateTime": "0001-01-01T00:00:00Z",
+        "KmsKeyId": "",
+        "ReaderEndpoint": "",
+        "StorageEncrypted": false
+      },
+      {
+        "AvailabilityZone": "",
+        "BackupRetentionPeriod": "",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:dkwrocks-2",
+        "DBInstanceClass": "",
+        "DBInstanceStatus": "",
+        "DBInstanceIdentifier": "dkwrocks-2",
+        "DBSubnetGroup": "",
+        "Endpoint": "",
+        "Engine": "",
+        "EngineVersion": "",
+        "InstanceCreateTime": "0001-01-01T00:00:00Z",
+        "KmsKeyId": "",
+        "ReaderEndpoint": "",
+        "StorageEncrypted": false
+      },
+      {
+        "AvailabilityZone": "",
+        "BackupRetentionPeriod": "",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:dkwrocks-3",
+        "DBInstanceClass": "",
+        "DBInstanceStatus": "",
+        "DBInstanceIdentifier": "dkwrocks-3",
+        "DBSubnetGroup": "",
+        "Endpoint": "",
+        "Engine": "",
+        "EngineVersion": "",
+        "InstanceCreateTime": "0001-01-01T00:00:00Z",
+        "KmsKeyId": "",
+        "ReaderEndpoint": "",
+        "StorageEncrypted": false
+      }
+    ]
+  }
+}
+
 ```
 
 ### Delete docdb cluster and instances

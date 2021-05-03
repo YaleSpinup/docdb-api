@@ -12,9 +12,9 @@ import (
 )
 
 // createDocumentDB creates documentDB cluster and instances
-func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, data *CreateDocDB) ([]byte, error) {
-	if &data.InstanceCount == nil {
-		return nil, apierror.New(apierror.ErrBadRequest, "invalid data: missing InstanceCount", nil)
+func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, data *CreateDocDB) ([]byte, error) {
+	if &data.InstanceCount == nil || name == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
 	output := []string{}
@@ -129,6 +129,9 @@ func (o *docDBOrchestrator) listDocumentDB(ctx context.Context) (*docdb.Describe
 
 // getDocumentDB gets data on a documentDB cluster+instance
 func (o *docDBOrchestrator) getDocumentDB(ctx context.Context, name string) (*docdb.DescribeDBClustersOutput, error) {
+	if name == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
 
 	input := docdb.DescribeDBClustersInput{
 		DBClusterIdentifier: aws.String(name),
@@ -143,7 +146,10 @@ func (o *docDBOrchestrator) getDocumentDB(ctx context.Context, name string) (*do
 }
 
 // deleteDocumentDB deletes documentDB instances and cluster
-func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, data *DeleteDocDB) (string, error) {
+func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, name string, data *DeleteDocDB) (string, error) {
+	if name == "" {
+		return "", apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
 
 	log.Debugf("Deleting documentDB instances and cluster: %s, %s\n", data.InstanceNames, data.ClusterName)
 

@@ -50,7 +50,7 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 		s.org,
 	)
 
-	resp, err := orch.createDocumentDB(r.Context(), &req)
+	resp, err := orch.createDocumentDB(r.Context(), name, &req)
 	if err != nil {
 		handleError(w, errors.Wrap(err, "failed to create documentDBs"))
 		return
@@ -98,7 +98,7 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 		s.org,
 	)
 
-	resp, err := orch.deleteDocumentDB(r.Context(), &req)
+	resp, err := orch.deleteDocumentDB(r.Context(), name, &req)
 	if err != nil {
 		handleError(w, errors.Wrap(err, "failed to delete documentDBs"))
 		return
@@ -131,7 +131,7 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 		s.session.ExternalID,
 		role,
 		"",
-		"arn:aws:iam::aws:policy/AmazonDocDBFullAccess",
+		"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess",
 	)
 	if err != nil {
 		msg := fmt.Sprintf("failed to assume role in account: %s", account)
@@ -178,7 +178,7 @@ func (s *server) GetDocumentDB(w http.ResponseWriter, r *http.Request) {
 		s.session.ExternalID,
 		role,
 		"",
-		"arn:aws:iam::aws:policy/AmazonDocDBFullAccess",
+		"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess",
 	)
 	if err != nil {
 		msg := fmt.Sprintf("failed to assume role in account: %s", account)

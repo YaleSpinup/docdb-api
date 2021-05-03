@@ -30,6 +30,6 @@ func (s *server) routes() {
 
 	api.HandleFunc("/{account}", s.ListDocumentDB).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/{name}", s.GetDocumentDB).Methods(http.MethodGet)
-	api.HandleFunc("/{account}/{name}", s.CreateDocumentDB).Methods(http.MethodPut)
+	api.HandleFunc("/{account}/{name}", s.CreateDocumentDB).Methods(http.MethodPost)
 	api.HandleFunc("/{account}/{name}", s.DeleteDocumentDB).Methods(http.MethodDelete)
 }

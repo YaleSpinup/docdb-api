@@ -55,12 +55,9 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 
 	allInstances := []*DBInstance{}
 
-	// create instances based on InstanceCount sent in
-	// don't begin a 0 instance
-	data.InstanceCount++
-	for i := 1; i < data.InstanceCount; i++ {
+	for i := 1; i <= data.InstanceCount; i++ {
 		// normalize instanceName
-		instanceName := fmt.Sprintf("%s-%v", data.DBClusterIdentifier, i)
+		instanceName := fmt.Sprintf("%s-%d", data.DBClusterIdentifier, i)
 
 		instanceData := docdb.CreateDBInstanceInput{
 			AutoMinorVersionUpgrade: aws.Bool(true),
@@ -82,24 +79,25 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 
 		loopInstance := new(DBInstance)
 
-		loopInstance.DBInstanceArn = *instanceCreateStatus.DBInstance.DBInstanceArn
-		loopInstance.DBInstanceIdentifier = *instanceCreateStatus.DBInstance.DBInstanceIdentifier
+		loopInstance.DBInstanceArn = *instanceCreateStatus.DBInstanceArn
+		loopInstance.DBInstanceIdentifier = *instanceCreateStatus.DBInstanceIdentifier
 
 		allInstances = append(allInstances, loopInstance)
 
 		output = append(output, fmt.Sprint(instanceCreateStatus))
-		log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
 
 	}
 
+	log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
+
 	createOut := Cluster{
 		DBClusters: DBCluster{
-			DBClusterArn:        *clusterCreateStatus.DBCluster.DBClusterArn,
-			DBClusterIdentifier: *clusterCreateStatus.DBCluster.DBClusterIdentifier,
-			Endpoint:            *clusterCreateStatus.DBCluster.Endpoint,
-			ReaderEndpoint:      *clusterCreateStatus.DBCluster.ReaderEndpoint,
-			StorageEncrypted:    *clusterCreateStatus.DBCluster.StorageEncrypted,
-			DBSubnetGroup:       *clusterCreateStatus.DBCluster.DBSubnetGroup,
+			DBClusterArn:        *clusterCreateStatus.DBClusterArn,
+			DBClusterIdentifier: *clusterCreateStatus.DBClusterIdentifier,
+			Endpoint:            *clusterCreateStatus.Endpoint,
+			ReaderEndpoint:      *clusterCreateStatus.ReaderEndpoint,
+			StorageEncrypted:    *clusterCreateStatus.StorageEncrypted,
+			DBSubnetGroup:       *clusterCreateStatus.DBSubnetGroup,
 			DBInstances:         allInstances,
 		},
 	}
@@ -128,7 +126,7 @@ func (o *docDBOrchestrator) listDocumentDB(ctx context.Context) (*docdb.Describe
 }
 
 // getDocumentDB gets data on a documentDB cluster+instance
-func (o *docDBOrchestrator) getDocumentDB(ctx context.Context, name string) (*docdb.DescribeDBClustersOutput, error) {
+func (o *docDBOrchestrator) getDocumentDB(ctx context.Context, name string) (*docdb.DBCluster, error) {
 	if name == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}

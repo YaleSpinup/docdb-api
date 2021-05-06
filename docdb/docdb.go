@@ -3,6 +3,7 @@ package docdb
 import (
 	"context"
 
+	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -72,37 +73,41 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 }
 
 // GetDB gets information on a documentDB cluster+instance
-func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
+func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DBCluster, error) {
 
 	out, err := d.Service.DescribeDBClusters(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return out, err
+	if len(out.DBClusters) > 1 {
+		return nil, apierror.New(apierror.ErrInternalError, "GetDB received more than one DBcluster", nil)
+	}
+
+	return out.DBClusters[0], err
 
 }
 
 // CreateDBCluster creates a documentDB cluster
-func (d *DocDB) CreateDBCluster(ctx context.Context, name string, input *docdb.CreateDBClusterInput) (*docdb.CreateDBClusterOutput, error) {
+func (d *DocDB) CreateDBCluster(ctx context.Context, name string, input *docdb.CreateDBClusterInput) (*docdb.DBCluster, error) {
 
 	out, err := d.Service.CreateDBCluster(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return out, nil
+	return out.DBCluster, nil
 }
 
 // CreateDBInstance creates a documentDB instance
-func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInstanceInput) (*docdb.CreateDBInstanceOutput, error) {
+func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInstanceInput) (*docdb.DBInstance, error) {
 
 	out, err := d.Service.CreateDBInstance(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return out, nil
+	return out.DBInstance, nil
 }
 
 // DeleteDBCluster deletes a documentDB cluster

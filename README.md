@@ -1,6 +1,6 @@
 # docdb-api
 
-Provides restful API access to the AWS DocumentDB service.
+Provides RESTful API access to the AWS DocumentDB service.
 
 ## Endpoints
 
@@ -36,24 +36,24 @@ GET
 
 ### Create docdb cluster and instances
 
-PUT
+POST
 
 /v1/docdb/{account}/{name}
 
 ```JSON
 {
   "AvailabilityZones": ["us-east-1a","us-east-1d", "us-east-1b"],
-  "DBClusterIdentifier": "bestDocDB",
-  "DBSubnetGroupName": "a-subnetgroup-name",
+  "DBClusterIdentifier": "exampleDB",
+  "DBSubnetGroupName": "some-subnet-group",
   "DBInstanceClass": "db.t3.medium",
   "Engine": "docdb",
-  "InstanceCount": "1",
+  "InstanceCount": "3",
   "MaintenanceWindow": "Sun:04:00-Sun:04:30",
   "MasterUsername": "foousername",
   "MasterUserPassword": "foobarbizbazboo",
   "Tags": [
     { "Key": "CreatedBy", "Value": "tom"},
-    { "Key": "MoneyMatters", "Value": "IT"}
+    { "Key": "MoneyMattersMost", "Value": "IT"}
   ]
 }
 ```
@@ -63,20 +63,20 @@ Response:
 ```JSON
 {
   "DBClusters": {
-    "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:bestDocDB",
-    "DBClusterIdentifier": "bestDocDB",
-    "Endpoint": "bestDocDB.cluster-cp7kklfeaq3g.us-east-1.docdb.amazonaws.com",
-    "ReaderEndpoint": "bestDocDB.cluster-ro-cp7kklfeaq3g.us-east-1.docdb.amazonaws.com",
+    "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:exampleDB",
+    "DBClusterIdentifier": "exampleDB",
+    "Endpoint": "exampleDB.cluster-somestring.us-east-1.docdb.amazonaws.com",
+    "ReaderEndpoint": "exampleDB.cluster-ro-somestring.us-east-1.docdb.amazonaws.com",
     "StorageEncrypted": false,
-    "DBSubnetGroup": "default-vpc-0e7363e700630fab5",
+    "DBSubnetGroup": "some-subnet-group",
     "DBInstances": [
       {
         "AvailabilityZone": "",
         "BackupRetentionPeriod": "",
-        "DBInstanceArn": "arn:aws:rds:us-east-1:516855177326:db:dkwrocks-1",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:exampleDB-1",
         "DBInstanceClass": "",
         "DBInstanceStatus": "",
-        "DBInstanceIdentifier": "dkwrocks-1",
+        "DBInstanceIdentifier": "exampleDB-1",
         "DBSubnetGroup": "",
         "Endpoint": "",
         "Engine": "",
@@ -89,10 +89,10 @@ Response:
       {
         "AvailabilityZone": "",
         "BackupRetentionPeriod": "",
-        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:dkwrocks-2",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:exampleDB-2",
         "DBInstanceClass": "",
         "DBInstanceStatus": "",
-        "DBInstanceIdentifier": "dkwrocks-2",
+        "DBInstanceIdentifier": "exampleDB-2",
         "DBSubnetGroup": "",
         "Endpoint": "",
         "Engine": "",
@@ -105,10 +105,10 @@ Response:
       {
         "AvailabilityZone": "",
         "BackupRetentionPeriod": "",
-        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:dkwrocks-3",
+        "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:exampleDB-3",
         "DBInstanceClass": "",
         "DBInstanceStatus": "",
-        "DBInstanceIdentifier": "dkwrocks-3",
+        "DBInstanceIdentifier": "exampleDB-3",
         "DBSubnetGroup": "",
         "Endpoint": "",
         "Engine": "",
@@ -132,12 +132,12 @@ DELETE
 
 ```JSON
 {
-  "ClusterName": "mytest-docdb",
+  "ClusterName": "exampleDB",
   "InstanceNames":
     [
-        "mytest-docdb-1",
-        "mytest-docdb-2",
-        "mytest-docdb-3"
+        "exampleDB-1",
+        "exampleDB-2",
+        "exampleDB-3"
     ],
   "SkipFinalSnapshot": true
 }

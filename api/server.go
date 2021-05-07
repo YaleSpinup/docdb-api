@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/YaleSpinup/docdb-api/common"
-	"github.com/YaleSpinup/docdb-api/docdb"
 	"github.com/YaleSpinup/docdb-api/iam"
 	"github.com/YaleSpinup/docdb-api/session"
 	"github.com/gorilla/handlers"
@@ -50,13 +49,12 @@ type apiVersion struct {
 }
 
 type server struct {
-	router        *mux.Router
-	version       *apiVersion
-	context       context.Context
-	docDBServices map[string]docdb.DocDB
-	session       session.Session
-	orgPolicy     string
-	org           string
+	router    *mux.Router
+	version   *apiVersion
+	context   context.Context
+	session   session.Session
+	orgPolicy string
+	org       string
 }
 
 // NewServer creates a new server and starts it
@@ -70,10 +68,9 @@ func NewServer(config common.Config) error {
 	}
 
 	s := server{
-		router:        mux.NewRouter(),
-		context:       ctx,
-		org:           config.Org,
-		docDBServices: make(map[string]docdb.DocDB),
+		router:  mux.NewRouter(),
+		context: ctx,
+		org:     config.Org,
 	}
 
 	s.version = &apiVersion{
@@ -96,8 +93,6 @@ func NewServer(config common.Config) error {
 		session.WithExternalID(config.Account.ExternalID),
 		session.WithExternalRoleName(config.Account.Role),
 	)
-
-	//	s.docdbServices[account] = docdb.AssumeRole(config)
 
 	publicURLs := map[string]string{
 		"/v1/docdb/ping":    "public",

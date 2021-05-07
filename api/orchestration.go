@@ -17,8 +17,6 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	output := []string{}
-
 	log.Debugf("Creating documentDB instances and cluster: %s\n", data.DBClusterIdentifier)
 
 	tags := make([]*docdb.Tag, 0, len(data.Tags))
@@ -51,7 +49,7 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 		return nil, apierror.New(apierror.ErrBadRequest, "failed to create db cluster", err)
 	}
 
-	output = append(output, fmt.Sprint(clusterCreateStatus))
+	log.Debugf("cluster create status: %+v\n", clusterCreateStatus)
 
 	allInstances := []*DBInstance{}
 
@@ -84,11 +82,9 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 
 		allInstances = append(allInstances, loopInstance)
 
-		output = append(output, fmt.Sprint(instanceCreateStatus))
+		log.Debugf("instance create status: %s\n", instanceCreateStatus)
 
 	}
-
-	log.Debugf("cluster+instance creation upstream raw output: %s\n", output)
 
 	createOut := Cluster{
 		DBClusters: DBCluster{

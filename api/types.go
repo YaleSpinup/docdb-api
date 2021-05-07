@@ -32,7 +32,7 @@ type CreateDocDB struct {
 	Tags                []*Tag
 }
 
-//DBInstance helps us collect useful data from the upstream instance create call output
+// DBInstance helps us collect useful data from the upstream instance create call output
 type DBInstance struct {
 	AvailabilityZone      string
 	BackupRetentionPeriod string
@@ -50,7 +50,7 @@ type DBInstance struct {
 	StorageEncrypted      bool
 }
 
-//DBCluster helps us collect useful data from the upstream Cluster create call output
+// DBCluster helps us collect useful data from the upstream Cluster create call output
 type DBCluster struct {
 	DBClusterArn        string
 	DBClusterIdentifier string

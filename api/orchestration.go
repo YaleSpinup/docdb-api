@@ -11,14 +11,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var DefaultAvailabilityZones = []*string{
+	aws.String("us-east-1a"),
+	aws.String("us-east-1d"),
+}
+
 // createDocumentDB creates documentDB cluster and instances
 func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, data *CreateDocDB) ([]byte, error) {
-	if &data.InstanceCount == nil || name == "" {
+	if data == nil || name == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
 	log.Debugf("Creating documentDB instances and cluster: %s\n", data.DBClusterIdentifier)
 
+	// normalize tags
 	tags := make([]*docdb.Tag, 0, len(data.Tags))
 
 	for _, t := range data.Tags {
@@ -28,18 +34,64 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 		})
 	}
 
-	input := docdb.CreateDBClusterInput{
-		AvailabilityZones: []*string{
-			aws.String("us-east-1a"),
-			aws.String("us-east-1d"),
+	newTags := []*docdb.Tag{
+		{
+			Key:   aws.String("spinup:org"),
+			Value: aws.String(o.org),
 		},
+	}
+
+	for _, t := range tags {
+		if aws.StringValue(t.Key) != "spinup:org" && aws.StringValue(t.Key) != "yale:org" {
+			newTags = append(newTags, t)
+		}
+	}
+
+	//
+	// CreateDBSubnetGroup - spinup-orgname-docdb-subnet
+	// Verify it exists, if not, create it
+	dbSubnetGroupName := fmt.Sprintf("spinup-%s-docdb-subnetgroup", o.org)
+
+	subnetIDSlice := []*string{aws.String("subnet-0707d40ddbb9d0818"), aws.String("subnet-02364e7e9fc4d8045")}
+	//subnetIDSlice := []*string{aws.String("subnet-0707d40ddbb9d0818")}
+
+	inputDBSubnetGroup := docdb.CreateDBSubnetGroupInput{
+		DBSubnetGroupDescription: aws.String(dbSubnetGroupName),
+		DBSubnetGroupName:        aws.String(dbSubnetGroupName),
+		SubnetIds:                subnetIDSlice,
+		Tags:                     newTags,
+	}
+	//SubnetIDs:                aws.StringValueSlice(subnetIDSlice),
+
+	searchDBSubnetGroup, err := o.client.GetDBSubnetGroup(ctx, &docdb.DescribeDBSubnetGroupsInput{DBSubnetGroupName: aws.String(dbSubnetGroupName)})
+	if err != nil {
+		if searchDBSubnetGroup == nil {
+			log.Infoln("searchDBSubnetGroup is nil")
+		}
+		log.Infof("Failed to get existing DBSubnetGroup: %s\n", err)
+		//return nil, apierror.New(apierror.ErrNotFound, "Failed to get existing DBSubnetGroup", err)
+	}
+
+	log.Debugf("searchDBClusterresult: %s\n", searchDBSubnetGroup)
+
+	if searchDBSubnetGroup == nil {
+		DBSubnetGroupCreateStatus, err := o.client.CreateDBSubnetGroup(ctx, &inputDBSubnetGroup)
+		if err != nil {
+			return nil, apierror.New(apierror.ErrBadRequest, "GOOGLELY failed to create DBSubnetGroup", err)
+		}
+
+		log.Debugf("DBSubnetGroup create status: %+v\n", DBSubnetGroupCreateStatus)
+	}
+
+	input := docdb.CreateDBClusterInput{
+		AvailabilityZones:   DefaultAvailabilityZones,
 		DBClusterIdentifier: &data.DBClusterIdentifier,
-		DBSubnetGroupName:   &data.DBSubnetGroupName,
+		DBSubnetGroupName:   aws.String(dbSubnetGroupName),
 		Engine:              &data.Engine,
 		MasterUsername:      &data.MasterUsername,
 		MasterUserPassword:  &data.MasterUserPassword,
-		StorageEncrypted:    &data.StorageEncrypted,
-		Tags:                tags,
+		StorageEncrypted:    aws.Bool(true),
+		Tags:                newTags,
 	}
 
 	clusterCreateStatus, err := o.client.CreateDBCluster(ctx, data.DBClusterIdentifier, &input)
@@ -75,12 +127,23 @@ func (o *docDBOrchestrator) createDocumentDB(ctx context.Context, name string, d
 			return nil, apierror.New(apierror.ErrBadRequest, "failed to create db instances", err)
 		}
 
-		loopInstance := new(DBInstance)
+		loopInstance := *&DBInstance{
+			AvailabilityZone:      *instanceCreateStatus.AvailabilityZone,
+			BackupRetentionPeriod: *instanceCreateStatus.BackupRetentionPeriod,
+			DBInstanceArn:         *instanceCreateStatus.DBInstanceArn,
+			DBInstanceClass:       *instanceCreateStatus.DBInstanceClass,
+			DBInstanceStatus:      *instanceCreateStatus.DBInstanceStatus,
+			DBInstanceIdentifier:  *instanceCreateStatus.DBInstanceIdentifier,
+			Engine:                *instanceCreateStatus.Engine,
+			EngineVersion:         *instanceCreateStatus.EngineVersion,
+			KmsKeyId:              *instanceCreateStatus.KmsKeyId,
+		}
 
-		loopInstance.DBInstanceArn = *instanceCreateStatus.DBInstanceArn
-		loopInstance.DBInstanceIdentifier = *instanceCreateStatus.DBInstanceIdentifier
+		// jam these back in with structs to support them
+		//DBSubnetGroup:         *instanceCreateStatus.DBSubnetGroup,
+		//Endpoint:              Endpoint,
 
-		allInstances = append(allInstances, loopInstance)
+		allInstances = append(allInstances, &loopInstance)
 
 		log.Debugf("instance create status: %s\n", instanceCreateStatus)
 
@@ -147,11 +210,25 @@ func (o *docDBOrchestrator) deleteDocumentDB(ctx context.Context, name string, d
 
 	log.Debugf("Deleting documentDB instances and cluster: %s, %s\n", data.InstanceNames, data.ClusterName)
 
-	for _, iName := range data.InstanceNames {
-		log.Debugf("instanceName: %s\n", iName)
+	// Get instances in cluster, so we can delete them without user giving input
+	getCluster := docdb.DescribeDBClustersInput{
+		DBClusterIdentifier: aws.String(name),
+	}
+
+	documentDB, err := o.client.GetDB(ctx, &getCluster)
+	if err != nil {
+		return "", apierror.New(apierror.ErrBadRequest, "failed to get documentDB", err)
+	}
+
+	log.Debugf("getting documentDB DBClusterOuput: %s\n", documentDB)
+	log.Debugf("getting documentDB.DBSubnetGroup: %s\n", aws.StringValue(documentDB.DBSubnetGroup))
+
+	// Loop through the DBClusterMember instances and delete them
+	for _, iName := range documentDB.DBClusterMembers {
+		log.Debugf("instanceName: %s\n", *iName.DBInstanceIdentifier)
 
 		instanceDeleteInput := docdb.DeleteDBInstanceInput{
-			DBInstanceIdentifier: aws.String(iName),
+			DBInstanceIdentifier: aws.String(*iName.DBInstanceIdentifier),
 		}
 
 		instanceDeleteStatus, err := o.client.DeleteDBInstance(ctx, &instanceDeleteInput)

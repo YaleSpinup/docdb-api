@@ -13,8 +13,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// CreateDocumentDB creates a DocumentDB Cluster and Instance(s)
-func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
+// DocumentDBCreateHandler creates a documentDB cluster and instance(s)
+func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
@@ -61,8 +61,8 @@ func (s *server) CreateDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-// DeleteDocumentDB handles and organizes calls to deletes a DocumentDB cluster
-func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
+// DocumentDBDeleteHandler deletes a DocumentDB cluster and instance(s)
+func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
@@ -115,8 +115,8 @@ func (s *server) DeleteDocumentDB(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
-// ListDocumentDb lists documentDBs
-func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
+// DocumentDbListHandler lists documentDBs
+func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
@@ -162,8 +162,8 @@ func (s *server) ListDocumentDB(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// GetDocumentDb gets a single named documentDB
-func (s *server) GetDocumentDB(w http.ResponseWriter, r *http.Request) {
+// DocumentDbGetHandler gets a single named documentDB
+func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]

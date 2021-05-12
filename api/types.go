@@ -32,21 +32,37 @@ type CreateDocDB struct {
 	Tags                []*Tag
 }
 
+// Subnet
+type Subnet struct {
+	SubnetAvailabilityZone string
+	SubnetIdentifier       string
+	SubnetStatus           string
+}
+
+// DBSubnetGroup lists a DBSubnetGroup configuration
+type DBSubnetGroup struct {
+	DBSubnetGroupARN         string
+	DBSubnetGroupDescription string
+	DBSubnetGroupName        string
+	SubnetGroupStatus        string
+	Subnets                  []*Subnet
+	VpcID                    string
+}
+
 // DBInstance helps us collect useful data from the upstream instance create call output
 type DBInstance struct {
 	AvailabilityZone      string
-	BackupRetentionPeriod string
+	BackupRetentionPeriod int64
 	DBInstanceArn         string
 	DBInstanceClass       string
 	DBInstanceStatus      string
 	DBInstanceIdentifier  string
-	DBSubnetGroup         string
+	DBSubnetGroup         *DBSubnetGroup
 	Endpoint              string
 	Engine                string
 	EngineVersion         string
 	InstanceCreateTime    time.Time
 	KmsKeyId              string
-	ReaderEndpoint        string
 	StorageEncrypted      bool
 }
 

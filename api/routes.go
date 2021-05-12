@@ -28,8 +28,8 @@ func (s *server) routes() {
 	api.HandleFunc("/version", s.VersionHandler).Methods(http.MethodGet)
 	api.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 
-	api.HandleFunc("/{account}", s.ListDocumentDB).Methods(http.MethodGet)
-	api.HandleFunc("/{account}/{name}", s.GetDocumentDB).Methods(http.MethodGet)
-	api.HandleFunc("/{account}/{name}", s.CreateDocumentDB).Methods(http.MethodPost)
-	api.HandleFunc("/{account}/{name}", s.DeleteDocumentDB).Methods(http.MethodDelete)
+	api.HandleFunc("/{account}", s.DocumentDBListHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBGetHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBCreateHandler).Methods(http.MethodPost)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBDeleteHandler).Methods(http.MethodDelete)
 }

@@ -60,6 +60,24 @@ func WithDefaultKMSKeyId(keyId string) DocDBOption {
 	}
 }
 
+// GetDBSubnetGroup gets documentDB DBSubnetGroup by name
+func (d *DocDB) GetDBSubnetGroup(ctx context.Context, input *docdb.DescribeDBSubnetGroupsInput) (*docdb.DescribeDBSubnetGroupsOutput, error) {
+	if input == nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Debugf("Listing documentDB dbsubnetgroups: %+v\n", input.DBSubnetGroupName)
+
+	out, err := d.Service.DescribeDBSubnetGroups(input)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("GOOGLE dbsubnetgroups: %+v\n", out)
+
+	return out, nil
+}
+
 // ListDB lists documentdb clusters
 func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
 	if input == nil {
@@ -73,7 +91,20 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 		return nil, err
 	}
 
-	return out, err
+	filter := []*docdb.DBCluster{}
+
+	for _, cluster := range out.DBClusters {
+		if aws.StringValue(cluster.Engine) == "docdb" {
+			log.Debugf("docbd clusters name, engine: %s, %v\n", aws.StringValue(cluster.DBClusterIdentifier), aws.StringValue(cluster.Engine))
+			filter = append(filter, cluster)
+		}
+	}
+
+	filterOut := &docdb.DescribeDBClustersOutput{
+		DBClusters: filter,
+	}
+
+	return filterOut, err
 }
 
 // GetDB gets information on a documentDB cluster+instance
@@ -129,6 +160,22 @@ func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInsta
 	return out.DBInstance, nil
 }
 
+// CreateDBSubnetGroup creates a documentDB DBSubnetGroup
+func (d *DocDB) CreateDBSubnetGroup(ctx context.Context, input *docdb.CreateDBSubnetGroupInput) (*docdb.DBSubnetGroup, error) {
+	if input == nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Debugf("creating documentDB DBSubnetGroup with input %+v", input)
+
+	out, err := d.Service.CreateDBSubnetGroup(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.DBSubnetGroup, nil
+}
+
 // DeleteDBCluster deletes a documentDB cluster
 func (d *DocDB) DeleteDBCluster(ctx context.Context, input *docdb.DeleteDBClusterInput) (*docdb.DeleteDBClusterOutput, error) {
 	if input == nil {
@@ -159,4 +206,20 @@ func (d *DocDB) DeleteDBInstance(ctx context.Context, input *docdb.DeleteDBInsta
 	}
 
 	return out, nil
+}
+
+// DeleteDBSubnetGroup deletes a documentDB DBSubnetGroup
+func (d *DocDB) DeleteDBSubnetGroup(ctx context.Context, input *docdb.DeleteDBSubnetGroupInput) (string, error) {
+	if input == nil {
+		return "", apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Debugf("deleting documentDB DBSubnetGroup with input %+v", input)
+
+	_, err := d.Service.DeleteDBSubnetGroup(input)
+	if err != nil {
+		return "", err
+	}
+
+	return "{\"OK\"}", nil
 }

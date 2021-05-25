@@ -2,6 +2,7 @@ package docdb
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
@@ -61,21 +62,21 @@ func WithDefaultKMSKeyId(keyId string) DocDBOption {
 }
 
 // GetDBSubnetGroup gets documentDB DBSubnetGroup by name
-func (d *DocDB) GetDBSubnetGroup(ctx context.Context, input *docdb.DescribeDBSubnetGroupsInput) (*docdb.DescribeDBSubnetGroupsOutput, error) {
+func (d *DocDB) GetDBSubnetGroup(ctx context.Context, input *docdb.DescribeDBSubnetGroupsInput) ([]*docdb.DBSubnetGroup, error) {
 	if input == nil {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("Listing documentDB dbsubnetgroups: %+v\n", input.DBSubnetGroupName)
+	log.Infof("searching for documentDB dbsubnetgroup: %s\n", aws.StringValue(input.DBSubnetGroupName))
 
 	out, err := d.Service.DescribeDBSubnetGroups(input)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debugf("GOOGLE dbsubnetgroups: %+v\n", out)
+	log.Debugf("search output for documentDB dbsubnetgroup: %v\n", out.DBSubnetGroups)
 
-	return out, nil
+	return out.DBSubnetGroups, nil
 }
 
 // ListDB lists documentdb clusters
@@ -84,27 +85,23 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("listing documentDB clusters with input %+v", input)
+	log.Infoln("listing documentDB clusters and instance(s)")
 
-	out, err := d.Service.DescribeDBClusters(input)
+	filters := []*docdb.Filter{
+		{
+			Name:   aws.String("engine"),
+			Values: aws.StringSlice([]string{"docdb"}),
+		},
+	}
+
+	out, err := d.Service.DescribeDBClusters(&docdb.DescribeDBClustersInput{Filters: filters})
 	if err != nil {
 		return nil, err
 	}
 
-	filter := []*docdb.DBCluster{}
+	log.Debugf("listing documentDB clusters and instance(s) with output: %+v\n", out)
 
-	for _, cluster := range out.DBClusters {
-		if aws.StringValue(cluster.Engine) == "docdb" {
-			log.Debugf("docbd clusters name, engine: %s, %v\n", aws.StringValue(cluster.DBClusterIdentifier), aws.StringValue(cluster.Engine))
-			filter = append(filter, cluster)
-		}
-	}
-
-	filterOut := &docdb.DescribeDBClustersOutput{
-		DBClusters: filter,
-	}
-
-	return filterOut, err
+	return out, err
 }
 
 // GetDB gets information on a documentDB cluster+instance
@@ -113,33 +110,43 @@ func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput)
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("getting documentDB cluster with input %+v", input)
+	log.Infof("getting documentDB cluster and instance(s): %+v", aws.StringValue(input.DBClusterIdentifier))
 
 	out, err := d.Service.DescribeDBClusters(input)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(out.DBClusters) > 1 {
-		return nil, apierror.New(apierror.ErrInternalError, "GetDB received more than one DBcluster", nil)
+	if len(out.DBClusters) == 0 {
+		msg := fmt.Sprintf("%s not found", input)
+		return nil, apierror.New(apierror.ErrNotFound, msg, nil)
 	}
+
+	if num := len(out.DBClusters); num > 1 {
+		msg := fmt.Sprintf("unexpected number of DBClusters found for input %s (%d)", input, num)
+		return nil, apierror.New(apierror.ErrInternalError, msg, nil)
+	}
+
+	log.Debugf("getting documentDB cluster and instance(s) with output: %+v", out)
 
 	return out.DBClusters[0], err
 
 }
 
 // CreateDBCluster creates a documentDB cluster
-func (d *DocDB) CreateDBCluster(ctx context.Context, name string, input *docdb.CreateDBClusterInput) (*docdb.DBCluster, error) {
+func (d *DocDB) CreateDBCluster(ctx context.Context, input *docdb.CreateDBClusterInput) (*docdb.DBCluster, error) {
 	if input == nil {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("creating documentDB cluster with input %+v", input)
+	log.Infof("creating documentDB cluster: %s", aws.StringValue(input.DBClusterIdentifier))
 
 	out, err := d.Service.CreateDBCluster(input)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("created documentDB cluster with output: %+v\n", out.DBCluster)
 
 	return out.DBCluster, nil
 }
@@ -150,12 +157,14 @@ func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInsta
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("creating documentDB instance with input %+v", input)
+	log.Infof("creating documentDB instance: %s", aws.StringValue(input.DBInstanceIdentifier))
 
 	out, err := d.Service.CreateDBInstance(input)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("created documentDB instance with output: %+v\n", out.DBInstance)
 
 	return out.DBInstance, nil
 }
@@ -166,12 +175,14 @@ func (d *DocDB) CreateDBSubnetGroup(ctx context.Context, input *docdb.CreateDBSu
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("creating documentDB DBSubnetGroup with input %+v", input)
+	log.Infof("creating documentDB DBSubnetGroup: %s", aws.StringValue(input.DBSubnetGroupName))
 
 	out, err := d.Service.CreateDBSubnetGroup(input)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("created documentDB DBSubnetGroup with output: %+v", out.DBSubnetGroup)
 
 	return out.DBSubnetGroup, nil
 }
@@ -182,12 +193,14 @@ func (d *DocDB) DeleteDBCluster(ctx context.Context, input *docdb.DeleteDBCluste
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("deleting documentDB cluster with input %+v", input)
+	log.Infof("deleting documentDB cluster: %s", aws.StringValue(input.DBClusterIdentifier))
 
 	out, err := d.Service.DeleteDBCluster(input)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Debugf("deleted documentDB cluster with ouput: %+v", out)
 
 	return out, nil
 }
@@ -198,28 +211,14 @@ func (d *DocDB) DeleteDBInstance(ctx context.Context, input *docdb.DeleteDBInsta
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	log.Debugf("deleting documentDB instance with input %+v", input)
+	log.Infof("deleting documentDB instance: %s", aws.StringValue(input.DBInstanceIdentifier))
 
 	out, err := d.Service.DeleteDBInstance(input)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Debugf("deleted documentDB instance with output: %+v", out)
+
 	return out, nil
-}
-
-// DeleteDBSubnetGroup deletes a documentDB DBSubnetGroup
-func (d *DocDB) DeleteDBSubnetGroup(ctx context.Context, input *docdb.DeleteDBSubnetGroupInput) (string, error) {
-	if input == nil {
-		return "", apierror.New(apierror.ErrBadRequest, "invalid input", nil)
-	}
-
-	log.Debugf("deleting documentDB DBSubnetGroup with input %+v", input)
-
-	_, err := d.Service.DeleteDBSubnetGroup(input)
-	if err != nil {
-		return "", err
-	}
-
-	return "{\"OK\"}", nil
 }

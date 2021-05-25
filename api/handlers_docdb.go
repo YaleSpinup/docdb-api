@@ -20,7 +20,7 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	account := vars["account"]
 	name := vars["name"]
 
-	log.Infof("create documentBD cluster and instance(s): %s\n", name)
+	log.Infof("creating documentBD cluster and instance(s): %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -68,7 +68,7 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 	account := vars["account"]
 	name := vars["name"]
 
-	log.Infof("delete documentBD cluster and instance(s): %s\n", name)
+	log.Infof("delete documentBD: %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -194,7 +194,7 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := orch.getDocumentDB(r.Context(), name)
 	if err != nil {
 		msg := fmt.Sprintf("failed to get documentDB: %s\n", name)
-		handleError(w, apierror.New(apierror.ErrInternalError, msg, err))
+		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
 		return
 	}
 

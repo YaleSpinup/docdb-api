@@ -49,6 +49,7 @@ type apiVersion struct {
 }
 
 type server struct {
+	//ec2Services map[string]ec2.EC2
 	router    *mux.Router
 	version   *apiVersion
 	context   context.Context
@@ -67,6 +68,7 @@ func NewServer(config common.Config) error {
 		return errors.New("'org' cannot be empty in the configuration")
 	}
 
+	//ec2Services: make(map[string]ec2.EC2),
 	s := server{
 		router:  mux.NewRouter(),
 		context: ctx,

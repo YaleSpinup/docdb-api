@@ -58,7 +58,7 @@ type DBInstance struct {
 	DBInstanceStatus      string
 	DBInstanceIdentifier  string
 	DBSubnetGroup         *DBSubnetGroup
-	Endpoint              string
+	Endpoint              *Endpoint
 	Engine                string
 	EngineVersion         string
 	InstanceCreateTime    time.Time
@@ -80,4 +80,10 @@ type DBCluster struct {
 // Cluster is the DBCluster outer JSON Key
 type Cluster struct {
 	DBClusters DBCluster
+}
+
+type Endpoint struct {
+	Address      *string `type:"string"`
+	HostedZoneId *string `type:"string"`
+	Port         *int64  `type:"integer"`
 }

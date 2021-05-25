@@ -6,7 +6,7 @@ import (
 
 type docDBOrchestrator struct {
 	client docdb.DocDB
-	org string
+	org    string
 }
 
 func newDocDBOrchestrator(client docdb.DocDB, org string) *docDBOrchestrator {

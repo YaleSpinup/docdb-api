@@ -10,7 +10,7 @@ GET /v1/docdb/version
 GET /v1/docdb/metrics
 
 GET /v1/docdb/{account}
-GET /v1/docdb/{account}/name
+GET /v1/docdb/{account}/{name}
 POST /v1/docdb/{account}/{name}
 DELETE /v1/docdb/{account}/{name}
 ```

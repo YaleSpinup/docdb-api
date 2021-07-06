@@ -49,8 +49,8 @@ type apiVersion struct {
 }
 
 type server struct {
-	router  *mux.Router
-	version *apiVersion
+	router    *mux.Router
+	version   *apiVersion
 	context   context.Context
 	session   session.Session
 	orgPolicy string
@@ -70,7 +70,7 @@ func NewServer(config common.Config) error {
 	s := server{
 		router:  mux.NewRouter(),
 		context: ctx,
-		org: config.Org,
+		org:     config.Org,
 	}
 
 	s.version = &apiVersion{
@@ -85,7 +85,6 @@ func NewServer(config common.Config) error {
 	}
 	s.orgPolicy = orgPolicy
 
-
 	// Create a new session used for authentication and assuming cross account roles
 	log.Debugf("Creating new session with key '%s' in region '%s'", config.Account.Akid, config.Account.Region)
 	s.session = session.New(
@@ -96,9 +95,9 @@ func NewServer(config common.Config) error {
 	)
 
 	publicURLs := map[string]string{
-		"/v1/test/ping":    "public",
-		"/v1/test/version": "public",
-		"/v1/test/metrics": "public",
+		"/v1/docdb/ping":    "public",
+		"/v1/docdb/version": "public",
+		"/v1/docdb/metrics": "public",
 	}
 
 	// load routes

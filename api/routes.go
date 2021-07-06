@@ -23,8 +23,13 @@ import (
 )
 
 func (s *server) routes() {
-	api := s.router.PathPrefix("/v1/test").Subrouter()
+	api := s.router.PathPrefix("/v1/docdb").Subrouter()
 	api.HandleFunc("/ping", s.PingHandler).Methods(http.MethodGet)
 	api.HandleFunc("/version", s.VersionHandler).Methods(http.MethodGet)
 	api.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
+
+	api.HandleFunc("/{account}", s.DocumentDBListHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBGetHandler).Methods(http.MethodGet)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBCreateHandler).Methods(http.MethodPost)
+	api.HandleFunc("/{account}/{name}", s.DocumentDBDeleteHandler).Methods(http.MethodDelete)
 }

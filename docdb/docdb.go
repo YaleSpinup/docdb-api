@@ -130,7 +130,6 @@ func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput)
 	log.Debugf("getting documentDB cluster and instance(s) with output: %+v", out)
 
 	return out.DBClusters[0], err
-
 }
 
 // CreateDBCluster creates a documentDB cluster

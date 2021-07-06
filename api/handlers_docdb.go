@@ -20,7 +20,7 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	account := vars["account"]
 	name := vars["name"]
 
-	log.Infof("creating documentBD cluster and instance(s): %s\n", name)
+	log.Infof("creating documentDB cluster and instance(s): %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 

@@ -30,7 +30,7 @@ import (
 	"github.com/YaleSpinup/docdb-api/session"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
+	cache "github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,12 +49,13 @@ type apiVersion struct {
 }
 
 type server struct {
-	router    *mux.Router
-	version   *apiVersion
-	context   context.Context
-	session   session.Session
-	orgPolicy string
-	org       string
+	router       *mux.Router
+	version      *apiVersion
+	context      context.Context
+	session      session.Session
+	sessionCache *cache.Cache
+	orgPolicy    string
+	org          string
 }
 
 // NewServer creates a new server and starts it
@@ -68,9 +69,10 @@ func NewServer(config common.Config) error {
 	}
 
 	s := server{
-		router:  mux.NewRouter(),
-		context: ctx,
-		org:     config.Org,
+		router:       mux.NewRouter(),
+		context:      ctx,
+		org:          config.Org,
+		sessionCache: cache.New(600*time.Second, 900*time.Second),
 	}
 
 	s.version = &apiVersion{

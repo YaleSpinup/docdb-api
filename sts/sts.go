@@ -59,14 +59,10 @@ func (s *STS) AssumeRole(ctx context.Context, input *sts.AssumeRoleInput) (*sts.
 
 	log.Infof("assuming role '%s' with session name '%s'", aws.StringValue(input.RoleArn), aws.StringValue(input.RoleSessionName))
 
-	log.Debugf("assuming role %s with input %+v", aws.StringValue(input.RoleArn), input)
-
 	out, err := s.Service.AssumeRoleWithContext(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Debugf("got output from sts assume role (%s): %+v", aws.StringValue(input.RoleArn), out)
 
 	return out, nil
 }

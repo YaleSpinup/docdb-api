@@ -62,30 +62,22 @@ func WithDefaultKMSKeyId(keyId string) DocDBOption {
 }
 
 // GetDBSubnetGroup gets documentDB DBSubnetGroup by name
-func (d *DocDB) GetDBSubnetGroup(ctx context.Context, input *docdb.DescribeDBSubnetGroupsInput) ([]*docdb.DBSubnetGroup, error) {
-	if input == nil {
-		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
-	}
+func (d *DocDB) GetDBSubnetGroup(ctx context.Context, name string) ([]*docdb.DBSubnetGroup, error) {
+	log.Debugf("getting details for documentDB subnet group: %s", name)
 
-	log.Infof("searching for documentDB dbsubnetgroup: %s\n", aws.StringValue(input.DBSubnetGroupName))
-
-	out, err := d.Service.DescribeDBSubnetGroups(input)
+	out, err := d.Service.DescribeDBSubnetGroups(&docdb.DescribeDBSubnetGroupsInput{DBSubnetGroupName: aws.String(name)})
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debugf("search output for documentDB dbsubnetgroup: %v\n", out.DBSubnetGroups)
+	log.Debugf("search output for documentDB db subnet group: %+v", out.DBSubnetGroups)
 
 	return out.DBSubnetGroups, nil
 }
 
-// ListDB lists documentdb clusters
-func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DescribeDBClustersOutput, error) {
-	if input == nil {
-		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
-	}
-
-	log.Infoln("listing documentDB clusters and instance(s)")
+// ListDocDBs lists documentDB clusters
+func (d *DocDB) ListDocDBClusters(ctx context.Context) ([]string, error) {
+	log.Debug("listing documentDB clusters")
 
 	filters := []*docdb.Filter{
 		{
@@ -94,36 +86,42 @@ func (d *DocDB) ListDB(ctx context.Context, input *docdb.DescribeDBClustersInput
 		},
 	}
 
-	out, err := d.Service.DescribeDBClusters(&docdb.DescribeDBClustersInput{Filters: filters})
-	if err != nil {
+	clusters := []string{}
+	if err := d.Service.DescribeDBClustersPagesWithContext(ctx,
+		&docdb.DescribeDBClustersInput{Filters: filters},
+		func(page *docdb.DescribeDBClustersOutput, lastPage bool) bool {
+			for _, c := range page.DBClusters {
+				clusters = append(clusters, aws.StringValue(c.DBClusterIdentifier))
+			}
+
+			return true
+		}); err != nil {
 		return nil, err
 	}
 
-	log.Debugf("listing documentDB clusters and instance(s) with output: %+v\n", out)
+	log.Debugf("listing documentDB clusters output: %+v", clusters)
 
-	return out, err
+	return clusters, nil
 }
 
-// GetDB gets information on a documentDB cluster+instance
-func (d *DocDB) GetDB(ctx context.Context, input *docdb.DescribeDBClustersInput) (*docdb.DBCluster, error) {
-	if input == nil {
-		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
-	}
+// GetDocDB gets information on a documentDB cluster+instance
+func (d *DocDB) GetDocDB(ctx context.Context, name string) (*docdb.DBCluster, error) {
+	log.Debugf("getting information about documentDB cluster %s", name)
 
-	log.Infof("getting documentDB cluster and instance(s): %+v", aws.StringValue(input.DBClusterIdentifier))
-
-	out, err := d.Service.DescribeDBClusters(input)
+	out, err := d.Service.DescribeDBClustersWithContext(ctx, &docdb.DescribeDBClustersInput{
+		DBClusterIdentifier: aws.String(name),
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	if len(out.DBClusters) == 0 {
-		msg := fmt.Sprintf("%s not found", input)
+		msg := fmt.Sprintf("%s not found", name)
 		return nil, apierror.New(apierror.ErrNotFound, msg, nil)
 	}
 
 	if num := len(out.DBClusters); num > 1 {
-		msg := fmt.Sprintf("unexpected number of DBClusters found for input %s (%d)", input, num)
+		msg := fmt.Sprintf("unexpected number of DBClusters found for %s (%d)", name, num)
 		return nil, apierror.New(apierror.ErrInternalError, msg, nil)
 	}
 
@@ -145,7 +143,7 @@ func (d *DocDB) CreateDBCluster(ctx context.Context, input *docdb.CreateDBCluste
 		return nil, err
 	}
 
-	log.Debugf("created documentDB cluster with output: %+v\n", out.DBCluster)
+	log.Debugf("created documentDB cluster with output: %+v", out.DBCluster)
 
 	return out.DBCluster, nil
 }
@@ -163,7 +161,7 @@ func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInsta
 		return nil, err
 	}
 
-	log.Debugf("created documentDB instance with output: %+v\n", out.DBInstance)
+	log.Debugf("created documentDB instance with output: %+v", out.DBInstance)
 
 	return out.DBInstance, nil
 }

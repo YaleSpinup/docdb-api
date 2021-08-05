@@ -42,14 +42,12 @@ func New(opts ...SessionOption) Session {
 
 func WithCredentials(key, secret, token string) SessionOption {
 	return func(s *Session) {
-		log.Debugf("setting credentials with key id %s", key)
 		s.credentials = credentials.NewStaticCredentials(key, secret, token)
 	}
 }
 
 func WithRegion(region string) SessionOption {
 	return func(s *Session) {
-		log.Debugf("setting region to %s", region)
 		s.region = region
 	}
 }

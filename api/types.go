@@ -1,89 +1,76 @@
 package api
 
-import "time"
+import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/docdb"
+)
 
-// DeleteDocDB is data used to delete a documentDB
-type DeleteDocDB struct {
-	FinalDBSnapshotIdentifier string
-	SkipFinalSnapshot         bool
-	ClusterName               string
-	InstanceNames             []string
+// DocDBCreateRequest is data used to create a documentDB
+type DocDBCreateRequest struct {
+	BackupRetentionPeriod *int64
+	InstanceCount         *int
+	DBClusterIdentifier   *string
+	DBInstanceClass       *string
+	EngineVersion         *string
+	MasterUsername        *string
+	MasterUserPassword    *string
+	SubnetIds             []*string
+	Tags                  []*Tag
+	VpcSecurityGroupIds   []*string
 }
 
-// Tag provides metadata and billing information
+// DocDBResponse is the output from documentDB operations
+type DocDBResponse struct {
+	// https://docs.aws.amazon.com/sdk-for-go/api/service/docdb/#DBCluster
+	Cluster *docdb.DBCluster
+	// https://docs.aws.amazon.com/sdk-for-go/api/service/docdb/#DBInstance
+	Instances []*docdb.DBInstance
+}
+
 type Tag struct {
 	Key   *string
 	Value *string
 }
 
-// CreateDocDB is data used to create a documentDB
-type CreateDocDB struct {
-	AvailabilityZones   []string
-	InstanceCount       int
-	DBClusterIdentifier string
-	DBSubnetGroupName   string
-	DBInstanceClass     string
-	Engine              string
-	MasterUsername      string
-	MasterUserPassword  string
-	MaintenanceWindow   string
-	PromotionTier       int64
-	StorageEncrypted    bool
-	Tags                []*Tag
+// normalizeTags strips the org from the given tags and ensures it is set to the API org
+func normalizeTags(org string, tags []*Tag) []*Tag {
+	normalizedTags := []*Tag{}
+	for _, t := range tags {
+		if aws.StringValue(t.Key) == "spinup:org" || aws.StringValue(t.Key) == "yale:org" {
+			continue
+		}
+		normalizedTags = append(normalizedTags, t)
+	}
+
+	normalizedTags = append(normalizedTags,
+		&Tag{
+			Key:   aws.String("spinup:org"),
+			Value: aws.String(org),
+		})
+
+	return normalizedTags
 }
 
-// Subnet
-type Subnet struct {
-	SubnetAvailabilityZone string
-	SubnetIdentifier       string
-	SubnetStatus           string
+// fromDocDBTags converts from RDS tags to api Tags
+func fromDocDBTags(ecrTags []*docdb.Tag) []*Tag {
+	tags := make([]*Tag, 0, len(ecrTags))
+	for _, t := range ecrTags {
+		tags = append(tags, &Tag{
+			Key:   t.Key,
+			Value: t.Value,
+		})
+	}
+	return tags
 }
 
-// DBSubnetGroup lists a DBSubnetGroup configuration
-type DBSubnetGroup struct {
-	DBSubnetGroupARN         string
-	DBSubnetGroupDescription string
-	DBSubnetGroupName        string
-	SubnetGroupStatus        string
-	Subnets                  []*Subnet
-	VpcID                    string
-}
-
-// DBInstance helps us collect useful data from the upstream instance create call output
-type DBInstance struct {
-	AvailabilityZone      string
-	BackupRetentionPeriod int64
-	DBInstanceArn         string
-	DBInstanceClass       string
-	DBInstanceStatus      string
-	DBInstanceIdentifier  string
-	DBSubnetGroup         *DBSubnetGroup
-	Endpoint              *Endpoint
-	Engine                string
-	EngineVersion         string
-	InstanceCreateTime    time.Time
-	KmsKeyId              string
-	StorageEncrypted      bool
-}
-
-// DBCluster helps us collect useful data from the upstream Cluster create call output
-type DBCluster struct {
-	DBClusterArn        string
-	DBClusterIdentifier string
-	Endpoint            string
-	ReaderEndpoint      string
-	StorageEncrypted    bool
-	DBSubnetGroup       string
-	DBInstances         []*DBInstance
-}
-
-// Cluster is the DBCluster outer JSON Key
-type Cluster struct {
-	DBClusters DBCluster
-}
-
-type Endpoint struct {
-	Address      *string `type:"string"`
-	HostedZoneId *string `type:"string"`
-	Port         *int64  `type:"integer"`
+// toDocDBTags converts from api Tags to RDS tags
+func toDocDBTags(tags []*Tag) []*docdb.Tag {
+	docdbTags := make([]*docdb.Tag, 0, len(tags))
+	for _, t := range tags {
+		docdbTags = append(docdbTags, &docdb.Tag{
+			Key:   t.Key,
+			Value: t.Value,
+		})
+	}
+	return docdbTags
 }

@@ -138,8 +138,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 		input.FinalDBSnapshotIdentifier = aws.String("final-" + name)
 	}
 
-	_, err = o.client.DeleteDBCluster(ctx, &input)
-	if err != nil {
+	if _, err = o.client.DeleteDBCluster(ctx, &input); err != nil {
 		return err
 	}
 

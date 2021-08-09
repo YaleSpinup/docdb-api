@@ -21,7 +21,9 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, dbSubnetGroupName(o.org))
 	if err != nil {
 		return nil, err
-	} else if !dbSubnetGroupFound {
+	}
+
+	if !dbSubnetGroupFound {
 		if err := o.dbSubnetGroupCreate(ctx, dbSubnetGroupName(o.org), req.SubnetIds); err != nil {
 			return nil, err
 		}

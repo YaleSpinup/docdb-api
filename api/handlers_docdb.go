@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
 	db "github.com/YaleSpinup/docdb-api/docdb"
-	log "github.com/sirupsen/logrus"
 )
 
 // DocumentDBCreateHandler creates a documentDB cluster and instance(s)
@@ -18,9 +18,6 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
-	name := vars["name"]
-
-	log.Infof("creating documentDB cluster and instance(s): %s\n", name)
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -38,7 +35,7 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// read the input against our struct in api/types.go
-	req := CreateDocDB{}
+	req := DocDBCreateRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		msg := fmt.Sprintf("cannot decode body into create documentdb input: %s", err)
 		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
@@ -50,15 +47,21 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 		s.org,
 	)
 
-	resp, err := orch.createDocumentDB(r.Context(), name, &req)
+	resp, err := orch.documentDBCreate(r.Context(), &req)
 	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to create documentDBs"))
+		handleError(w, errors.Wrap(err, "failed to create documentDB"))
+		return
+	}
+
+	j, err := json.Marshal(resp)
+	if err != nil {
+		handleError(w, errors.Wrap(err, "unable to marshal response from the docdb service"))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	w.Write(j)
 }
 
 // DocumentDBDeleteHandler deletes a DocumentDB cluster and instance(s)
@@ -68,7 +71,13 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 	account := vars["account"]
 	name := vars["name"]
 
-	log.Infof("delete documentBD: %s\n", name)
+	queries := r.URL.Query()
+	snapshot := false
+	if len(queries["snapshot"]) > 0 {
+		if b, err := strconv.ParseBool(queries["snapshot"][0]); err == nil {
+			snapshot = b
+		}
+	}
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -85,34 +94,18 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// read the input against our struct in api/types.go
-	req := DeleteDocDB{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		msg := fmt.Sprintf("cannot decode body into delete documentdb input: %s", err)
-		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
-		return
-	}
-
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
 		s.org,
 	)
 
-	resp, err := orch.deleteDocumentDB(r.Context(), name, &req)
-	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to delete documentDBs"))
-		return
-	}
-
-	j, err := json.Marshal(resp)
-	if err != nil {
-		handleError(w, apierror.New(apierror.ErrInternalError, "failed to marshal json", err))
+	if err := orch.documentDBDelete(r.Context(), name, snapshot); err != nil {
+		handleError(w, errors.Wrap(err, "failed to delete documentDB cluster"))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(j)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // DocumentDbListHandler lists documentDBs
@@ -120,9 +113,6 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 	w = LogWriter{w}
 	vars := mux.Vars(r)
 	account := vars["account"]
-	log.Infof("account: %s\n", account)
-
-	log.Infoln("list documentDBs")
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -144,7 +134,7 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 		s.org,
 	)
 
-	resp, err := orch.listDocumentDB(r.Context())
+	resp, err := orch.documentDBList(r.Context())
 	if err != nil {
 		handleError(w, errors.Wrap(err, "failed to list documentDBs"))
 		return
@@ -159,7 +149,6 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
-
 }
 
 // DocumentDbGetHandler gets a single named documentDB
@@ -168,8 +157,6 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	account := vars["account"]
 	name := vars["name"]
-
-	log.Infoln("get documentDB")
 
 	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
 
@@ -191,10 +178,9 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 		s.org,
 	)
 
-	resp, err := orch.getDocumentDB(r.Context(), name)
+	resp, err := orch.documentDBDetails(r.Context(), name)
 	if err != nil {
-		msg := fmt.Sprintf("failed to get documentDB: %s\n", name)
-		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
+		handleError(w, errors.Wrap(err, "failed to get documentDB details"))
 		return
 	}
 
@@ -207,5 +193,4 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
-
 }

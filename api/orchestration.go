@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/docdb"
 	log "github.com/sirupsen/logrus"
@@ -75,12 +77,27 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 // documentDBList lists all documentDB clusters
 func (o *docDBOrchestrator) documentDBList(ctx context.Context) ([]string, error) {
-	output, err := o.client.ListDocDBClusters(ctx)
+	out, err := o.rgClient.GetResourcesInOrg(ctx, o.org, "database", "docdb")
 	if err != nil {
 		return nil, err
 	}
 
-	return output, nil
+	resources := make([]string, 0, len(out))
+	for _, r := range out {
+		a, err := arn.Parse(aws.StringValue(r.ResourceARN))
+		if err != nil {
+			return nil, apierror.New(apierror.ErrInternalError, "failed to parse ARN "+aws.StringValue(r.ResourceARN), err)
+		}
+
+		parts := strings.SplitN(a.Resource, ":", 2)
+		if !strings.HasPrefix(parts[1], "cluster-") {
+			// AWS DocumentDB creates 2 ARNs for each cluster: one with the name and one with a unique DbClusterResourceId
+			// that we are excluding here (it looks like cluster-L3R4YRSBUYDP4GLMTJ2WF5GH5Q)
+			resources = append(resources, parts[1])
+		}
+	}
+
+	return resources, nil
 }
 
 // documentDBDetails returns details about a documentDB cluster

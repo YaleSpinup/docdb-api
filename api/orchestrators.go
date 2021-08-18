@@ -2,16 +2,19 @@ package api
 
 import (
 	"github.com/YaleSpinup/docdb-api/docdb"
+	"github.com/YaleSpinup/docdb-api/resourcegroupstaggingapi"
 )
 
 type docDBOrchestrator struct {
-	client docdb.DocDB
-	org    string
+	client   docdb.DocDB
+	rgClient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
+	org      string
 }
 
-func newDocDBOrchestrator(client docdb.DocDB, org string) *docDBOrchestrator {
+func newDocDBOrchestrator(client docdb.DocDB, rgclient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI, org string) *docDBOrchestrator {
 	return &docDBOrchestrator{
-		client: client,
-		org:    org,
+		client:   client,
+		rgClient: rgclient,
+		org:      org,
 	}
 }

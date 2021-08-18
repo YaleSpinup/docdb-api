@@ -75,7 +75,7 @@ func (d *DocDB) GetDBSubnetGroup(ctx context.Context, name string) ([]*docdb.DBS
 	return out.DBSubnetGroups, nil
 }
 
-// ListDocDBs lists documentDB clusters
+// ListDocDBs lists all documentDB clusters
 func (d *DocDB) ListDocDBClusters(ctx context.Context) ([]string, error) {
 	log.Debug("listing documentDB clusters")
 

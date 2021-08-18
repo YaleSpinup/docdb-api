@@ -32,16 +32,27 @@ type Tag struct {
 	Value *string
 }
 
-// normalizeTags strips the org from the given tags and ensures it is set to the API org
+// normalizeTags sets required tags
 func normalizeTags(org string, tags []*Tag) []*Tag {
 	normalizedTags := []*Tag{
 		{
 			Key:   aws.String("spinup:org"),
 			Value: aws.String(org),
 		},
+		{
+			Key:   aws.String("spinup:type"),
+			Value: aws.String("database"),
+		},
+		{
+			Key:   aws.String("spinup:flavor"),
+			Value: aws.String("docdb"),
+		},
 	}
 	for _, t := range tags {
-		if aws.StringValue(t.Key) == "spinup:org" || aws.StringValue(t.Key) == "yale:org" {
+		if aws.StringValue(t.Key) == "yale:org" ||
+			aws.StringValue(t.Key) == "spinup:org" ||
+			aws.StringValue(t.Key) == "spinup:type" ||
+			aws.StringValue(t.Key) == "spinup:flavor" {
 			continue
 		}
 		normalizedTags = append(normalizedTags, t)

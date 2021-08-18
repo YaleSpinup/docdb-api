@@ -69,7 +69,7 @@ func handleError(w http.ResponseWriter, err error) {
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		w.Write([]byte(aerr.Message))
+		w.Write([]byte(err.Error()))
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

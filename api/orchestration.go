@@ -17,7 +17,7 @@ import (
 func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCreateRequest) (*DocDBResponse, error) {
 	log.Infof("creating documentDB cluster %s with %d instance(s)", aws.StringValue(req.DBClusterIdentifier), aws.IntValue(req.InstanceCount))
 
-	req.Tags = normalizeTags(o.org, req.Tags)
+	req.Tags = req.Tags.normalize(o.org)
 
 	// check if a DBSubnetGroup exists, and create it if needed
 	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, dbSubnetGroupName(o.org))
@@ -42,7 +42,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		MasterUsername:        req.MasterUsername,
 		MasterUserPassword:    req.MasterUserPassword,
 		StorageEncrypted:      aws.Bool(true),
-		Tags:                  toDocDBTags(req.Tags),
+		Tags:                  req.Tags.toDocDBTags(),
 		VpcSecurityGroupIds:   req.VpcSecurityGroupIds,
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 			DBClusterIdentifier:     req.DBClusterIdentifier,
 			DBInstanceIdentifier:    aws.String(instanceName),
 			Engine:                  aws.String("docdb"),
-			Tags:                    toDocDBTags(req.Tags),
+			Tags:                    req.Tags.toDocDBTags(),
 		})
 		if err != nil {
 			// TODO: Rollback
@@ -122,7 +122,7 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 	}
 	tags := fromDocDBTags(t)
 
-	if !tagsInOrg(o.org, tags) {
+	if !tags.inOrg(o.org) {
 		return nil, apierror.New(apierror.ErrNotFound, "cluster not found in our org", nil)
 	}
 

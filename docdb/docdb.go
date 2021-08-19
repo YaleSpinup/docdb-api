@@ -104,8 +104,8 @@ func (d *DocDB) ListDocDBClusters(ctx context.Context) ([]string, error) {
 	return clusters, nil
 }
 
-// GetDocDB gets information on a documentDB cluster+instance
-func (d *DocDB) GetDocDB(ctx context.Context, name string) (*docdb.DBCluster, error) {
+// GetDocDBDetails gets information about a documentDB cluster
+func (d *DocDB) GetDocDBDetails(ctx context.Context, name string) (*docdb.DBCluster, error) {
 	log.Debugf("getting information about documentDB cluster %s", name)
 
 	out, err := d.Service.DescribeDBClustersWithContext(ctx, &docdb.DescribeDBClustersInput{
@@ -125,9 +125,25 @@ func (d *DocDB) GetDocDB(ctx context.Context, name string) (*docdb.DBCluster, er
 		return nil, apierror.New(apierror.ErrInternalError, msg, nil)
 	}
 
-	log.Debugf("getting documentDB cluster and instance(s) with output: %+v", out)
+	log.Debugf("getting documentDB cluster and instance(s) output: %+v", out)
 
 	return out.DBClusters[0], err
+}
+
+// GetDocDBTags gets the tags for a documentDB cluster
+func (d *DocDB) GetDocDBTags(ctx context.Context, arn *string) ([]*docdb.Tag, error) {
+	log.Debugf("getting tags for documentDB cluster %s", aws.StringValue(arn))
+
+	out, err := d.Service.ListTagsForResourceWithContext(ctx, &docdb.ListTagsForResourceInput{
+		ResourceName: arn,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("getting documentDB tags output: %+v", out)
+
+	return out.TagList, err
 }
 
 // CreateDBCluster creates a documentDB cluster

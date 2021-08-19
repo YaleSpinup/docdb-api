@@ -24,12 +24,23 @@ type DocDBResponse struct {
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/docdb/#DBCluster
 	Cluster *docdb.DBCluster
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/docdb/#DBInstance
-	Instances []*docdb.DBInstance
+	Instances []*docdb.DBInstance `json:",omitempty"`
+	Tags      []*Tag              `json:",omitempty"`
 }
 
 type Tag struct {
 	Key   *string
 	Value *string
+}
+
+// tagsInOrg returns true if there is a spinup:org tag and it matches our org
+func tagsInOrg(org string, tags []*Tag) bool {
+	for _, t := range tags {
+		if aws.StringValue(t.Key) == "spinup:org" && aws.StringValue(t.Value) == org {
+			return true
+		}
+	}
+	return false
 }
 
 // normalizeTags sets required tags
@@ -49,13 +60,12 @@ func normalizeTags(org string, tags []*Tag) []*Tag {
 		},
 	}
 	for _, t := range tags {
-		if aws.StringValue(t.Key) == "yale:org" ||
-			aws.StringValue(t.Key) == "spinup:org" ||
-			aws.StringValue(t.Key) == "spinup:type" ||
-			aws.StringValue(t.Key) == "spinup:flavor" {
+		switch aws.StringValue(t.Key) {
+		case "yale:org", "spinup:org", "spinup:type", "spinup:flavor":
 			continue
+		default:
+			normalizedTags = append(normalizedTags, t)
 		}
-		normalizedTags = append(normalizedTags, t)
 	}
 
 	return normalizedTags

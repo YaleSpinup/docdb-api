@@ -17,7 +17,7 @@ import (
 func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCreateRequest) (*DocDBResponse, error) {
 	log.Infof("creating documentDB cluster %s with %d instance(s)", aws.StringValue(req.DBClusterIdentifier), aws.IntValue(req.InstanceCount))
 
-	req.Tags = normalizeTags(o.org, req.Tags)
+	req.Tags = req.Tags.normalize(o.org)
 
 	// check if a DBSubnetGroup exists, and create it if needed
 	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, dbSubnetGroupName(o.org))
@@ -42,7 +42,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		MasterUsername:        req.MasterUsername,
 		MasterUserPassword:    req.MasterUserPassword,
 		StorageEncrypted:      aws.Bool(true),
-		Tags:                  toDocDBTags(req.Tags),
+		Tags:                  req.Tags.toDocDBTags(),
 		VpcSecurityGroupIds:   req.VpcSecurityGroupIds,
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 			DBClusterIdentifier:     req.DBClusterIdentifier,
 			DBInstanceIdentifier:    aws.String(instanceName),
 			Engine:                  aws.String("docdb"),
-			Tags:                    toDocDBTags(req.Tags),
+			Tags:                    req.Tags.toDocDBTags(),
 		})
 		if err != nil {
 			// TODO: Rollback
@@ -101,12 +101,12 @@ func (o *docDBOrchestrator) documentDBList(ctx context.Context) ([]string, error
 }
 
 // documentDBDetails returns details about a documentDB cluster
-func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) (*docdb.DBCluster, error) {
+func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) (*DocDBResponse, error) {
 	if name == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	output, err := o.client.GetDocDB(ctx, name)
+	cluster, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
@@ -116,7 +116,20 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 		return nil, err
 	}
 
-	return output, nil
+	t, err := o.client.GetDocDBTags(ctx, cluster.DBClusterArn)
+	if err != nil {
+		return nil, err
+	}
+	tags := fromDocDBTags(t)
+
+	if !tags.inOrg(o.org) {
+		return nil, apierror.New(apierror.ErrNotFound, "cluster not found in our org", nil)
+	}
+
+	return &DocDBResponse{
+		Cluster: cluster,
+		Tags:    tags,
+	}, nil
 }
 
 // documentDBDelete deletes documentDB cluster and associated instances
@@ -125,7 +138,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	documentDB, err := o.client.GetDocDB(ctx, name)
+	documentDB, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {

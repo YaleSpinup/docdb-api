@@ -200,49 +200,69 @@ GET `/v1/docdb/{account}/{name}`
 #### Example get response
 ```json
 {
-    "AssociatedRoles": null,
-    "AvailabilityZones": [
-        "us-east-1f",
-        "us-east-1d",
-        "us-east-1a"
-    ],
-    "BackupRetentionPeriod": 1,
-    "ClusterCreateTime": "2021-08-05T13:23:03.003Z",
-    "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:mydocdb",
-    "DBClusterIdentifier": "mydocdb",
-    "DBClusterMembers": [
+    "Cluster": {
+        "AssociatedRoles": null,
+        "AvailabilityZones": [
+            "us-east-1f",
+            "us-east-1d",
+            "us-east-1a"
+        ],
+        "BackupRetentionPeriod": 1,
+        "ClusterCreateTime": "2021-08-05T13:23:03.003Z",
+        "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:mydocdb",
+        "DBClusterIdentifier": "mydocdb",
+        "DBClusterMembers": [
+            {
+                "DBClusterParameterGroupStatus": "in-sync",
+                "DBInstanceIdentifier": "mydocdb-1",
+                "IsClusterWriter": true,
+                "PromotionTier": 1
+            }
+        ],
+        "DBClusterParameterGroup": "default.docdb4.0",
+        "DBSubnetGroup": "spinup-example-docdb-subnetgroup",
+        "DbClusterResourceId": "cluster-IBME365R7OUKGHZYEOHDJWLBSQ",
+        "DeletionProtection": false,
+        "EarliestRestorableTime": "2021-08-05T13:23:43.551Z",
+        "EnabledCloudwatchLogsExports": null,
+        "Endpoint": "mydocdb.cluster-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "Engine": "docdb",
+        "EngineVersion": "4.0.0",
+        "HostedZoneId": "ZZXXYY5TT8WVW",
+        "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/11aa0000-8fcb-4e65-abb4-eed7f4a012f7",
+        "LatestRestorableTime": "2021-08-05T13:23:43.551Z",
+        "MasterUsername": "dadmin",
+        "MultiAZ": false,
+        "PercentProgress": null,
+        "Port": 27017,
+        "PreferredBackupWindow": "08:41-09:11",
+        "PreferredMaintenanceWindow": "mon:10:08-mon:10:38",
+        "ReaderEndpoint": "mydocdb.cluster-ro-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "Status": "available",
+        "StorageEncrypted": true,
+        "VpcSecurityGroups": [
+            {
+                "Status": "active",
+                "VpcSecurityGroupId": "sg-0abcdef1234567890"
+            }
+        ]
+    },
+    "Tags": [
         {
-            "DBClusterParameterGroupStatus": "in-sync",
-            "DBInstanceIdentifier": "mydocdb-1",
-            "IsClusterWriter": true,
-            "PromotionTier": 1
-        }
-    ],
-    "DBClusterParameterGroup": "default.docdb4.0",
-    "DBSubnetGroup": "spinup-example-docdb-subnetgroup",
-    "DbClusterResourceId": "cluster-IBME365R7OUKGHZYEOHDJWLBSQ",
-    "DeletionProtection": false,
-    "EarliestRestorableTime": "2021-08-05T13:23:43.551Z",
-    "EnabledCloudwatchLogsExports": null,
-    "Endpoint": "mydocdb.cluster-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
-    "Engine": "docdb",
-    "EngineVersion": "4.0.0",
-    "HostedZoneId": "ZZXXYY5TT8WVW",
-    "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/11aa0000-8fcb-4e65-abb4-eed7f4a012f7",
-    "LatestRestorableTime": "2021-08-05T13:23:43.551Z",
-    "MasterUsername": "dadmin",
-    "MultiAZ": false,
-    "PercentProgress": null,
-    "Port": 27017,
-    "PreferredBackupWindow": "08:41-09:11",
-    "PreferredMaintenanceWindow": "mon:10:08-mon:10:38",
-    "ReaderEndpoint": "mydocdb.cluster-ro-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
-    "Status": "available",
-    "StorageEncrypted": true,
-    "VpcSecurityGroups": [
+            "Key": "spinup:flavor",
+            "Value": "docdb"
+        },
         {
-            "Status": "active",
-            "VpcSecurityGroupId": "sg-0abcdef1234567890"
+            "Key": "CreatedBy",
+            "Value": "me"
+        },
+        {
+            "Key": "spinup:org",
+            "Value": "localdev"
+        },
+        {
+            "Key": "spinup:type",
+            "Value": "database"
         }
     ]
 }

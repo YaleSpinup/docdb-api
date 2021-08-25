@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/YaleSpinup/apierror"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/docdb"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +17,7 @@ import (
 func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCreateRequest) (*DocDBResponse, error) {
 	log.Infof("creating documentDB cluster %s with %d instance(s)", aws.StringValue(req.DBClusterIdentifier), aws.IntValue(req.InstanceCount))
 
-	req.Tags = normalizeTags(o.org, req.Tags)
+	req.Tags = req.Tags.normalize(o.org)
 
 	// check if a DBSubnetGroup exists, and create it if needed
 	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, dbSubnetGroupName(o.org))
@@ -40,7 +42,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		MasterUsername:        req.MasterUsername,
 		MasterUserPassword:    req.MasterUserPassword,
 		StorageEncrypted:      aws.Bool(true),
-		Tags:                  toDocDBTags(req.Tags),
+		Tags:                  req.Tags.toDocDBTags(),
 		VpcSecurityGroupIds:   req.VpcSecurityGroupIds,
 	})
 	if err != nil {
@@ -57,7 +59,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 			DBClusterIdentifier:     req.DBClusterIdentifier,
 			DBInstanceIdentifier:    aws.String(instanceName),
 			Engine:                  aws.String("docdb"),
-			Tags:                    toDocDBTags(req.Tags),
+			Tags:                    req.Tags.toDocDBTags(),
 		})
 		if err != nil {
 			// TODO: Rollback
@@ -75,21 +77,36 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 // documentDBList lists all documentDB clusters
 func (o *docDBOrchestrator) documentDBList(ctx context.Context) ([]string, error) {
-	output, err := o.client.ListDocDBClusters(ctx)
+	out, err := o.rgClient.GetResourcesInOrg(ctx, o.org, "database", "docdb")
 	if err != nil {
 		return nil, err
 	}
 
-	return output, nil
+	resources := make([]string, 0, len(out))
+	for _, r := range out {
+		a, err := arn.Parse(aws.StringValue(r.ResourceARN))
+		if err != nil {
+			return nil, apierror.New(apierror.ErrInternalError, "failed to parse ARN "+aws.StringValue(r.ResourceARN), err)
+		}
+
+		parts := strings.SplitN(a.Resource, ":", 2)
+		if !strings.HasPrefix(parts[1], "cluster-") {
+			// AWS DocumentDB creates 2 ARNs for each cluster: one with the name and one with a unique DbClusterResourceId
+			// that we are excluding here (it looks like cluster-L3R4YRSBUYDP4GLMTJ2WF5GH5Q)
+			resources = append(resources, parts[1])
+		}
+	}
+
+	return resources, nil
 }
 
 // documentDBDetails returns details about a documentDB cluster
-func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) (*docdb.DBCluster, error) {
+func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) (*DocDBResponse, error) {
 	if name == "" {
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	output, err := o.client.GetDocDB(ctx, name)
+	cluster, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
@@ -99,7 +116,20 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 		return nil, err
 	}
 
-	return output, nil
+	t, err := o.client.GetDocDBTags(ctx, cluster.DBClusterArn)
+	if err != nil {
+		return nil, err
+	}
+	tags := fromDocDBTags(t)
+
+	if !tags.inOrg(o.org) {
+		return nil, apierror.New(apierror.ErrNotFound, "cluster not found in our org", nil)
+	}
+
+	return &DocDBResponse{
+		Cluster: cluster,
+		Tags:    tags,
+	}, nil
 }
 
 // documentDBDelete deletes documentDB cluster and associated instances
@@ -108,7 +138,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	documentDB, err := o.client.GetDocDB(ctx, name)
+	documentDB, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {

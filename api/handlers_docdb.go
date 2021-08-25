@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	db "github.com/YaleSpinup/docdb-api/docdb"
+	"github.com/YaleSpinup/docdb-api/resourcegroupstaggingapi"
 )
 
 // DocumentDBCreateHandler creates a documentDB cluster and instance(s)
@@ -44,6 +45,7 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		nil,
 		s.org,
 	)
 
@@ -96,6 +98,7 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		nil,
 		s.org,
 	)
 
@@ -122,6 +125,7 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 		role,
 		"",
 		"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess",
+		"arn:aws:iam::aws:policy/ResourceGroupsandTagEditorReadOnlyAccess",
 	)
 	if err != nil {
 		msg := fmt.Sprintf("failed to assume role in account: %s", account)
@@ -131,6 +135,7 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		resourcegroupstaggingapi.New(resourcegroupstaggingapi.WithSession(sess.Session)),
 		s.org,
 	)
 
@@ -146,6 +151,7 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("X-Items", strconv.Itoa(len(resp)))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
@@ -175,6 +181,7 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		nil,
 		s.org,
 	)
 

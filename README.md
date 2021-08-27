@@ -9,6 +9,8 @@ GET /v1/docdb/ping
 GET /v1/docdb/version
 GET /v1/docdb/metrics
 
+GET /v1/docdb/flywheel?task=xxx[&task=yyy&task=zzz]
+
 POST /v1/docdb/{account}
 GET /v1/docdb/{account}
 GET /v1/docdb/{account}/{name}
@@ -22,6 +24,8 @@ Authentication is accomplished via an encrypted pre-shared key passed in the `X-
 ## Usage
 
 ### Create docdb cluster
+
+Create requests are asynchronous and return a task ID in the header `X-Flywheel-Task`. This header can be used to get the task information and logs from the flywheel HTTP endpoint.
 
 POST `/v1/docdb/{account}`
 
@@ -43,7 +47,7 @@ POST `/v1/docdb/{account}`
 
 | Response Code                 | Definition                      |
 | ----------------------------- | --------------------------------|
-| **200 OK**                    | success creating docdb cluster  |
+| **202 Accepted**              | success accepting docdb request |
 | **400 Bad Request**           | badly formed request            |
 | **403 Forbidden**             | bad token or fail to assume role|
 | **404 Not Found**             | account not found               |
@@ -281,6 +285,41 @@ DELETE `/v1/docdb/{account}/{name}?snapshot=[true|false]`
 | **403 Forbidden**             | bad token or fail to assume role         |
 | **404 Not Found**             | account or docdb not found               |
 | **500 Internal Server Error** | a server error occurred                  |
+
+### Get task information for asynchronous tasks
+
+The status of a new task will initially be `running` and then change to either `failed` or `completed`
+
+GET `/v1/docdb/flywheel?task=xxx[&task=yyy&task=zzz]`
+
+```json
+{
+    "b403ea9a-a49e-4c4e-a05e-0743f0593c55": {
+        "checkin_at": "2021-08-27T21:56:09.332745Z",
+        "completed_at": "2021-08-27T21:56:09.539952Z",
+        "created_at": "2021-08-27T21:55:05.771054Z",
+        "id": "b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+        "status": "completed",
+        "events": [
+            "2021-08-27T21:55:07.77093Z starting task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:55:08.098951Z 2021-08-27T21:55:07.902583Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:55:08.155465Z requested creation of docdb cluster myDocDA",
+            "2021-08-27T21:55:08.326608Z 2021-08-27T21:55:08.227748Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:55:08.386625Z checking if docdb cluster myDocDA is available before continuing",
+            "2021-08-27T21:55:08.519555Z 2021-08-27T21:55:08.439783Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:55:08.584438Z docdb cluster myDocDA is not yet available (creating)",
+            "2021-08-27T21:55:10.823559Z 2021-08-27T21:55:10.723116Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:55:10.879328Z checking if docdb cluster myDocDA is available before continuing",
+            . . .
+            "2021-08-27T21:56:09.214998Z 2021-08-27T21:56:09.120696Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:56:09.26763Z checking if docdb cluster myDocDA is available before continuing",
+            "2021-08-27T21:56:09.424279Z 2021-08-27T21:56:09.332745Z checkin task b403ea9a-a49e-4c4e-a05e-0743f0593c55",
+            "2021-08-27T21:56:09.47998Z docdb cluster myDocDA is available",
+            "2021-08-27T21:56:09.631862Z 2021-08-27T21:56:09.539952Z complete task b403ea9a-a49e-4c4e-a05e-0743f0593c55"
+        ]
+    }
+}
+```
 
 ## Author
 

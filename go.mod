@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/YaleSpinup/apierror v0.1.0
+	github.com/YaleSpinup/flywheel v0.2.0
 	github.com/aws/aws-sdk-go v1.40.16
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

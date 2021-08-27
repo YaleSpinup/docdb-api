@@ -46,10 +46,11 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
 		nil,
+		s.flywheel,
 		s.org,
 	)
 
-	resp, err := orch.documentDBCreate(r.Context(), &req)
+	resp, task, err := orch.documentDBCreate(r.Context(), &req)
 	if err != nil {
 		handleError(w, errors.Wrap(err, "failed to create documentDB"))
 		return
@@ -62,7 +63,8 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("X-Flywheel-Task", task.ID)
+	w.WriteHeader(http.StatusAccepted)
 	w.Write(j)
 }
 
@@ -98,6 +100,7 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		nil,
 		nil,
 		s.org,
 	)
@@ -136,6 +139,7 @@ func (s *server) DocumentDBListHandler(w http.ResponseWriter, r *http.Request) {
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
 		resourcegroupstaggingapi.New(resourcegroupstaggingapi.WithSession(sess.Session)),
+		nil,
 		s.org,
 	)
 
@@ -181,6 +185,7 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
+		nil,
 		nil,
 		s.org,
 	)

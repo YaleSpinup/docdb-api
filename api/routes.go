@@ -28,6 +28,8 @@ func (s *server) routes() {
 	api.HandleFunc("/version", s.VersionHandler).Methods(http.MethodGet)
 	api.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 
+	api.Handle("/flywheel", s.flywheel.Handler())
+
 	api.HandleFunc("/{account}", s.DocumentDBCreateHandler).Methods(http.MethodPost)
 	api.HandleFunc("/{account}", s.DocumentDBListHandler).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/{name}", s.DocumentDBGetHandler).Methods(http.MethodGet)

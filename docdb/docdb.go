@@ -130,6 +130,29 @@ func (d *DocDB) GetDocDBDetails(ctx context.Context, name string) (*docdb.DBClus
 	return out.DBClusters[0], err
 }
 
+// GetDocDBInstances gets information about all instances in a documentDB cluster
+func (d *DocDB) GetDocDBInstances(ctx context.Context, name string) ([]*docdb.DBInstance, error) {
+	log.Debugf("getting information about documentDB instances in cluster %s", name)
+
+	filters := []*docdb.Filter{
+		{
+			Name:   aws.String("db-cluster-id"),
+			Values: aws.StringSlice([]string{name}),
+		},
+	}
+
+	out, err := d.Service.DescribeDBInstancesWithContext(ctx, &docdb.DescribeDBInstancesInput{
+		Filters: filters,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("getting documentDB instances output: %+v", out)
+
+	return out.DBInstances, err
+}
+
 // GetDocDBTags gets the tags for a documentDB cluster
 func (d *DocDB) GetDocDBTags(ctx context.Context, arn *string) ([]*docdb.Tag, error) {
 	log.Debugf("getting tags for documentDB cluster %s", aws.StringValue(arn))

@@ -87,15 +87,35 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		if err = retry(10, 2*time.Second, func() error {
 			msgChan <- fmt.Sprintf("checking if docdb cluster %s is available before continuing", cl)
 
-			out, err := o.client.GetDocDBDetails(taskCtx, cl)
+			// check cluster status
+			cluster, err := o.client.GetDocDBDetails(taskCtx, cl)
 			if err != nil {
 				msgChan <- fmt.Sprintf("got error checking if docdb cluster %s is available: %s", cl, err)
 				return err
 			}
 
-			if status := aws.StringValue(out.Status); status != "available" {
+			if status := aws.StringValue(cluster.Status); status != "available" {
 				msgChan <- fmt.Sprintf("docdb cluster %s is not yet available (%s)", cl, status)
 				return fmt.Errorf("docdb cluster %s not yet available", cl)
+			}
+
+			// check instances
+			instances, err := o.client.GetDocDBInstances(taskCtx, cl)
+			if err != nil {
+				msgChan <- fmt.Sprintf("got error describing docdb instances for %s: %s", cl, err)
+				return err
+			}
+
+			if len(instances) == 0 {
+				msgChan <- fmt.Sprintf("docdb cluster %s doesn't have any instances", cl)
+				return fmt.Errorf("docdb cluster %s has no instances", cl)
+			}
+
+			for _, i := range instances {
+				if status := aws.StringValue(i.DBInstanceStatus); status != "available" {
+					msgChan <- fmt.Sprintf("not all docdb instances in cluster %s are available", cl)
+					return fmt.Errorf("not all docdb instances in cluster %s are available", cl)
+				}
 			}
 
 			msgChan <- fmt.Sprintf("docdb cluster %s is available", cl)

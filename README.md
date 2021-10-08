@@ -14,6 +14,7 @@ GET /v1/docdb/flywheel?task=xxx[&task=yyy&task=zzz]
 POST /v1/docdb/{account}
 GET /v1/docdb/{account}
 GET /v1/docdb/{account}/{name}
+PUT /v1/docdb/{account}/{name}
 DELETE /v1/docdb/{account}/{name}?snapshot=[true|false]
 ```
 
@@ -267,6 +268,158 @@ GET `/v1/docdb/{account}/{name}`
         {
             "Key": "spinup:type",
             "Value": "database"
+        }
+    ]
+}
+```
+
+### Modify docdb cluster
+
+The modify request can be used to change the master password for the DocumentDB cluster, or other parameters, such as `BackupRetentionPeriod`, `EngineVersion` or `DBInstanceClass`
+
+PUT `/v1/docdb/{account}/{name}`
+
+```json
+{
+  "BackupRetentionPeriod": 2,
+  "DBInstanceClass": "db.r5.large",
+  "MasterUserPassword": "newexamplepassword",
+}```
+
+| Response Code                 | Definition                      |
+| ----------------------------- | --------------------------------|
+| **200 OK**                    | success modifying docdb cluster |
+| **400 Bad Request**           | badly formed request            |
+| **403 Forbidden**             | bad token or fail to assume role|
+| **404 Not Found**             | account not found               |
+| **500 Internal Server Error** | a server error occurred         |
+
+#### Example modify response
+```json
+{
+    "Cluster": {
+        "AssociatedRoles": null,
+        "AvailabilityZones": [
+            "us-east-1d",
+            "us-east-1a",
+            "us-east-1b"
+        ],
+        "BackupRetentionPeriod": 2,
+        "ClusterCreateTime": "2021-10-08T15:01:01.073Z",
+        "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:mydocdb",
+        "DBClusterIdentifier": "mydocdb",
+        "DBClusterMembers": [
+            {
+                "DBClusterParameterGroupStatus": "in-sync",
+                "DBInstanceIdentifier": "mydocdb-1",
+                "IsClusterWriter": true,
+                "PromotionTier": 1
+            }
+        ],
+        "DBClusterParameterGroup": "default.docdb4.0",
+        "DBSubnetGroup": "spinup-spintg-docdb-subnetgroup",
+        "DbClusterResourceId": "cluster-QX7X4WBDAQ3S44RXW226MLMYAM",
+        "DeletionProtection": false,
+        "EarliestRestorableTime": "2021-10-08T15:01:46.142Z",
+        "EnabledCloudwatchLogsExports": null,
+        "Endpoint": "mydocdb.cluster-c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "Engine": "docdb",
+        "EngineVersion": "4.0.0",
+        "HostedZoneId": "ZNKXH85TT8WVW",
+        "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/92c75e09-8fcb-4e65-aba4-eed7f4a012f7",
+        "LatestRestorableTime": "2021-10-08T15:31:03.749Z",
+        "MasterUsername": "dadmin",
+        "MultiAZ": false,
+        "PercentProgress": null,
+        "Port": 27017,
+        "PreferredBackupWindow": "05:59-06:29",
+        "PreferredMaintenanceWindow": "tue:07:43-tue:08:13",
+        "ReadReplicaIdentifiers": null,
+        "ReaderEndpoint": "mydocdb.cluster-ro-c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "ReplicationSourceIdentifier": null,
+        "Status": "available",
+        "StorageEncrypted": true,
+        "VpcSecurityGroups": [
+            {
+                "Status": "active",
+                "VpcSecurityGroupId": "sg-0abcdef1234567890"
+            }
+        ]
+    },
+    "Instances": [
+        {
+            "AutoMinorVersionUpgrade": true,
+            "AvailabilityZone": "us-east-1a",
+            "BackupRetentionPeriod": 2,
+            "CACertificateIdentifier": "rds-ca-2019",
+            "DBClusterIdentifier": "mydocdb",
+            "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:mydocdb-1",
+            "DBInstanceClass": "db.r5.large",
+            "DBInstanceIdentifier": "mydocdb-1",
+            "DBInstanceStatus": "available",
+            "DBSubnetGroup": {
+                "DBSubnetGroupArn": null,
+                "DBSubnetGroupDescription": "spinup-spintg-docdb-subnetgroup",
+                "DBSubnetGroupName": "spinup-spintg-docdb-subnetgroup",
+                "SubnetGroupStatus": "Complete",
+                "Subnets": [
+                    {
+                        "SubnetAvailabilityZone": {
+                            "Name": "us-east-1d"
+                        },
+                        "SubnetIdentifier": "subnet-01234567",
+                        "SubnetStatus": "Active"
+                    },
+                    {
+                        "SubnetAvailabilityZone": {
+                            "Name": "us-east-1a"
+                        },
+                        "SubnetIdentifier": "subnet-01234568",
+                        "SubnetStatus": "Active"
+                    }
+                ],
+                "VpcId": "vpc-8bb612ec"
+            },
+            "DbiResourceId": "db-UUZG3SJ7BBBU4EJV5JW663DMIA",
+            "EnabledCloudwatchLogsExports": null,
+            "Endpoint": {
+                "Address": "mydocdb-1.c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+                "HostedZoneId": "ZNKXH85TT8WVW",
+                "Port": 27017
+            },
+            "Engine": "docdb",
+            "EngineVersion": "4.0.0",
+            "InstanceCreateTime": "2021-10-08T15:06:00.146Z",
+            "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/92c73e09-9fcb-4e65-aba4-eed7f4a012f7",
+            "LatestRestorableTime": null,
+            "PendingModifiedValues": {
+                "AllocatedStorage": null,
+                "BackupRetentionPeriod": null,
+                "CACertificateIdentifier": null,
+                "DBInstanceClass": null,
+                "DBInstanceIdentifier": null,
+                "DBSubnetGroupName": null,
+                "EngineVersion": null,
+                "Iops": null,
+                "LicenseModel": null,
+                "MasterUserPassword": null,
+                "MultiAZ": null,
+                "PendingCloudwatchLogsExports": null,
+                "Port": null,
+                "StorageType": null
+            },
+            "PreferredBackupWindow": "05:59-06:29",
+            "PreferredMaintenanceWindow": "mon:03:59-mon:04:29",
+            "PromotionTier": 1,
+            "PubliclyAccessible": false,
+            "StatusInfos": null,
+            "StorageEncrypted": true,
+            "VpcSecurityGroups": [
+                {
+                    "Status": "active",
+                    "VpcSecurityGroupId": "sg-0abcdef1234567890"
+                }
+            ]
         }
     ]
 }

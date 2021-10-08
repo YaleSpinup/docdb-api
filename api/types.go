@@ -18,6 +18,17 @@ type DocDBCreateRequest struct {
 	VpcSecurityGroupIds   []*string
 }
 
+// DocDBModifyRequest is data used to modify a documentDB
+type DocDBModifyRequest struct {
+	BackupRetentionPeriod  *int64
+	DBInstanceClass        *string
+	EngineVersion          *string
+	MasterUserPassword     *string
+	NewDBClusterIdentifier *string
+	Tags                   Tags
+	VpcSecurityGroupIds    []*string
+}
+
 // DocDBResponse is the output from documentDB operations
 type DocDBResponse struct {
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/docdb/#DBCluster

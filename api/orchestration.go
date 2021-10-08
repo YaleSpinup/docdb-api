@@ -189,6 +189,59 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 	}, nil
 }
 
+// documentDBModify modifies documentDB cluster and instances
+func (o *docDBOrchestrator) documentDBModify(ctx context.Context, name string, req *DocDBModifyRequest) (*DocDBResponse, error) {
+	if name == "" {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	documentDB, err := o.client.GetDocDBDetails(ctx, name)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
+				return nil, apierror.New(apierror.ErrNotFound, "cluster not found", nil)
+			}
+		}
+		return nil, err
+	}
+
+	// modify cluster parameters
+	cluster, err := o.client.ModifyDBCluster(ctx, &docdb.ModifyDBClusterInput{
+		BackupRetentionPeriod:  req.BackupRetentionPeriod,
+		DBClusterIdentifier:    aws.String(name),
+		EngineVersion:          req.EngineVersion,
+		MasterUserPassword:     req.MasterUserPassword,
+		NewDBClusterIdentifier: req.NewDBClusterIdentifier,
+		VpcSecurityGroupIds:    req.VpcSecurityGroupIds,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	allDBInstances := []*docdb.DBInstance{}
+
+	// if needed, loop through all the cluster instances and modify them
+	if req.DBInstanceClass != nil {
+		for _, i := range documentDB.DBClusterMembers {
+			dbInstance, err := o.client.ModifyDBInstance(ctx, &docdb.ModifyDBInstanceInput{
+				ApplyImmediately:     aws.Bool(true),
+				DBInstanceIdentifier: i.DBInstanceIdentifier,
+				DBInstanceClass:      req.DBInstanceClass,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			allDBInstances = append(allDBInstances, dbInstance)
+		}
+	}
+
+	return &DocDBResponse{
+		Cluster:   cluster,
+		Instances: allDBInstances,
+	}, nil
+}
+
 // documentDBDelete deletes documentDB cluster and associated instances
 func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, snapshot bool) error {
 	if name == "" {

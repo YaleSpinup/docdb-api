@@ -283,7 +283,7 @@ PUT `/v1/docdb/{account}/{name}`
 {
   "BackupRetentionPeriod": 2,
   "DBInstanceClass": "db.r5.large",
-  "MasterUserPassword": "newexamplepassword",
+  "MasterUserPassword": "newexamplepassword"
 }```
 
 | Response Code                 | Definition                      |

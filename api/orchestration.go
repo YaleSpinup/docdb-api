@@ -207,6 +207,7 @@ func (o *docDBOrchestrator) documentDBModify(ctx context.Context, name string, r
 
 	// modify cluster parameters
 	cluster, err := o.client.ModifyDBCluster(ctx, &docdb.ModifyDBClusterInput{
+		ApplyImmediately:       aws.Bool(true),
 		BackupRetentionPeriod:  req.BackupRetentionPeriod,
 		DBClusterIdentifier:    aws.String(name),
 		EngineVersion:          req.EngineVersion,

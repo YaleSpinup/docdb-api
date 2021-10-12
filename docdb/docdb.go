@@ -258,3 +258,39 @@ func (d *DocDB) DeleteDBInstance(ctx context.Context, input *docdb.DeleteDBInsta
 
 	return out, nil
 }
+
+// ModifyDBCluster modifies a documentDB cluster
+func (d *DocDB) ModifyDBCluster(ctx context.Context, input *docdb.ModifyDBClusterInput) (*docdb.DBCluster, error) {
+	if input == nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Infof("modifying documentDB cluster: %s", aws.StringValue(input.DBClusterIdentifier))
+
+	out, err := d.Service.ModifyDBCluster(input)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("modified documentDB cluster with output: %+v", out.DBCluster)
+
+	return out.DBCluster, nil
+}
+
+// ModifyDBInstance modifies a documentDB instance
+func (d *DocDB) ModifyDBInstance(ctx context.Context, input *docdb.ModifyDBInstanceInput) (*docdb.DBInstance, error) {
+	if input == nil {
+		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Infof("modifying documentDB instance: %s", aws.StringValue(input.DBInstanceIdentifier))
+
+	out, err := d.Service.ModifyDBInstance(input)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("modified documentDB instance with output: %+v", out.DBInstance)
+
+	return out.DBInstance, nil
+}

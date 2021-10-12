@@ -206,3 +206,56 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
 }
+
+// DocumentDBModifyHandler modifies parameters for a documentDB
+func (s *server) DocumentDBModifyHandler(w http.ResponseWriter, r *http.Request) {
+	w = LogWriter{w}
+	vars := mux.Vars(r)
+	account := vars["account"]
+	name := vars["name"]
+
+	role := fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName)
+
+	sess, err := s.assumeRole(
+		r.Context(),
+		s.session.ExternalID,
+		role,
+		"",
+		"arn:aws:iam::aws:policy/AmazonDocDBFullAccess",
+	)
+	if err != nil {
+		msg := fmt.Sprintf("failed to assume role in account: %s", account)
+		handleError(w, apierror.New(apierror.ErrForbidden, msg, err))
+		return
+	}
+
+	req := DocDBModifyRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		msg := fmt.Sprintf("cannot decode body into modify documentdb input: %s", err)
+		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
+		return
+	}
+
+	orch := newDocDBOrchestrator(
+		db.New(db.WithSession(sess.Session)),
+		nil,
+		nil,
+		s.org,
+	)
+
+	resp, err := orch.documentDBModify(r.Context(), name, &req)
+	if err != nil {
+		handleError(w, errors.Wrap(err, "failed to modify documentDB"))
+		return
+	}
+
+	j, err := json.Marshal(resp)
+	if err != nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "failed to marshal json", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
+}

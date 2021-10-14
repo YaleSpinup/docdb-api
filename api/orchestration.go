@@ -67,7 +67,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		})
 		if err != nil {
 			// TODO: Rollback
-			return nil, nil, apierror.New(apierror.ErrBadRequest, "failed to create docdb instance "+instanceName, err)
+			return nil, nil, err
 		}
 
 		allDBInstances = append(allDBInstances, dbInstance)
@@ -165,11 +165,6 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 
 	cluster, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
-				return nil, apierror.New(apierror.ErrNotFound, "cluster not found", nil)
-			}
-		}
 		return nil, err
 	}
 
@@ -197,11 +192,6 @@ func (o *docDBOrchestrator) documentDBModify(ctx context.Context, name string, r
 
 	documentDB, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
-				return nil, apierror.New(apierror.ErrNotFound, "cluster not found", nil)
-			}
-		}
 		return nil, err
 	}
 
@@ -251,11 +241,6 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 
 	documentDB, err := o.client.GetDocDBDetails(ctx, name)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() == docdb.ErrCodeDBClusterNotFoundFault {
-				return apierror.New(apierror.ErrNotFound, "cluster not found", nil)
-			}
-		}
 		return err
 	}
 

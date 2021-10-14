@@ -67,7 +67,7 @@ func (d *DocDB) GetDBSubnetGroup(ctx context.Context, name string) ([]*docdb.DBS
 
 	out, err := d.Service.DescribeDBSubnetGroups(&docdb.DescribeDBSubnetGroupsInput{DBSubnetGroupName: aws.String(name)})
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to get subnet groups", err)
 	}
 
 	log.Debugf("search output for documentDB db subnet group: %+v", out.DBSubnetGroups)
@@ -96,7 +96,7 @@ func (d *DocDB) ListDocDBClusters(ctx context.Context) ([]string, error) {
 
 			return true
 		}); err != nil {
-		return nil, err
+		return nil, ErrCode("failed to list clusters", err)
 	}
 
 	log.Debugf("listing documentDB clusters output: %+v", clusters)
@@ -112,7 +112,7 @@ func (d *DocDB) GetDocDBDetails(ctx context.Context, name string) (*docdb.DBClus
 		DBClusterIdentifier: aws.String(name),
 	})
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to get details", err)
 	}
 
 	if len(out.DBClusters) == 0 {
@@ -145,7 +145,7 @@ func (d *DocDB) GetDocDBInstances(ctx context.Context, name string) ([]*docdb.DB
 		Filters: filters,
 	})
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to get instances", err)
 	}
 
 	log.Debugf("getting documentDB instances output: %+v", out)
@@ -161,7 +161,7 @@ func (d *DocDB) GetDocDBTags(ctx context.Context, arn *string) ([]*docdb.Tag, er
 		ResourceName: arn,
 	})
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to get tags", err)
 	}
 
 	log.Debugf("getting documentDB tags output: %+v", out)
@@ -179,7 +179,7 @@ func (d *DocDB) CreateDBCluster(ctx context.Context, input *docdb.CreateDBCluste
 
 	out, err := d.Service.CreateDBCluster(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to create cluster", err)
 	}
 
 	log.Debugf("created documentDB cluster with output: %+v", out.DBCluster)
@@ -197,7 +197,7 @@ func (d *DocDB) CreateDBInstance(ctx context.Context, input *docdb.CreateDBInsta
 
 	out, err := d.Service.CreateDBInstance(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to create instance", err)
 	}
 
 	log.Debugf("created documentDB instance with output: %+v", out.DBInstance)
@@ -215,7 +215,7 @@ func (d *DocDB) CreateDBSubnetGroup(ctx context.Context, input *docdb.CreateDBSu
 
 	out, err := d.Service.CreateDBSubnetGroup(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to create subnet group", err)
 	}
 
 	log.Debugf("created documentDB DBSubnetGroup with output: %+v", out.DBSubnetGroup)
@@ -233,10 +233,10 @@ func (d *DocDB) DeleteDBCluster(ctx context.Context, input *docdb.DeleteDBCluste
 
 	out, err := d.Service.DeleteDBCluster(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to delete cluster", err)
 	}
 
-	log.Debugf("deleted documentDB cluster with ouput: %+v", out)
+	log.Debugf("deleted documentDB cluster with output: %+v", out)
 
 	return out, nil
 }
@@ -251,7 +251,7 @@ func (d *DocDB) DeleteDBInstance(ctx context.Context, input *docdb.DeleteDBInsta
 
 	out, err := d.Service.DeleteDBInstance(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to delete instance", err)
 	}
 
 	log.Debugf("deleted documentDB instance with output: %+v", out)
@@ -269,7 +269,7 @@ func (d *DocDB) ModifyDBCluster(ctx context.Context, input *docdb.ModifyDBCluste
 
 	out, err := d.Service.ModifyDBCluster(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to modify cluster", err)
 	}
 
 	log.Debugf("modified documentDB cluster with output: %+v", out.DBCluster)
@@ -287,7 +287,7 @@ func (d *DocDB) ModifyDBInstance(ctx context.Context, input *docdb.ModifyDBInsta
 
 	out, err := d.Service.ModifyDBInstance(input)
 	if err != nil {
-		return nil, err
+		return nil, ErrCode("failed to modify instance", err)
 	}
 
 	log.Debugf("modified documentDB instance with output: %+v", out.DBInstance)

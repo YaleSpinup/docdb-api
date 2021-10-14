@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func ErrCode(msg string, err error) error {
@@ -211,9 +212,7 @@ func ErrCode(msg string, err error) error {
 			iam.ErrCodeNoSuchEntityException:
 
 			return apierror.New(apierror.ErrNotFound, msg, aerr)
-
 		case
-
 			// iam.ErrCodeServiceFailureException for service response error code
 			// "ServiceFailure".
 			//
@@ -223,10 +222,10 @@ func ErrCode(msg string, err error) error {
 
 			return apierror.New(apierror.ErrServiceUnavailable, msg, aerr)
 		default:
-			m := msg + ": " + aerr.Message()
-			return apierror.New(apierror.ErrBadRequest, m, aerr)
+			return apierror.New(apierror.ErrBadRequest, msg, aerr)
 		}
 	}
 
+	log.Warnf("uncaught error: %s, returning Internal Server Error", err)
 	return apierror.New(apierror.ErrInternalError, msg, err)
 }

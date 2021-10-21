@@ -49,9 +49,9 @@ func TestErrCode(t *testing.T) {
 		expected := apierror.New(apiErr, "test error", awserr.New(awsErr, awsErr, nil))
 		err := ErrCode("test error", awserr.New(awsErr, awsErr, nil))
 
-		aerr, ok := err.(apierror.Error)
-		if !ok {
-			t.Errorf("expected iam error %s to be an apierror.Error %s, got %s", awsErr, apiErr, err)
+		var aerr apierror.Error
+		if !errors.As(err, &aerr) {
+			t.Errorf("expected aws error %s to be an apierror.Error %s, got %s", awsErr, apiErr, err)
 		}
 
 		if aerr.String() != expected.String() {

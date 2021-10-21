@@ -52,7 +52,7 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 
 	resp, task, err := orch.documentDBCreate(r.Context(), &req)
 	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to create documentDB"))
+		handleError(w, err)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (s *server) DocumentDBDeleteHandler(w http.ResponseWriter, r *http.Request)
 	)
 
 	if err := orch.documentDBDelete(r.Context(), name, snapshot); err != nil {
-		handleError(w, errors.Wrap(err, "failed to delete documentDB cluster"))
+		handleError(w, err)
 		return
 	}
 
@@ -192,7 +192,7 @@ func (s *server) DocumentDBGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := orch.documentDBDetails(r.Context(), name)
 	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to get documentDB details"))
+		handleError(w, err)
 		return
 	}
 
@@ -245,7 +245,7 @@ func (s *server) DocumentDBModifyHandler(w http.ResponseWriter, r *http.Request)
 
 	resp, err := orch.documentDBModify(r.Context(), name, &req)
 	if err != nil {
-		handleError(w, errors.Wrap(err, "failed to modify documentDB"))
+		handleError(w, err)
 		return
 	}
 

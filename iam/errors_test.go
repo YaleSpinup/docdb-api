@@ -42,15 +42,20 @@ func TestErrCode(t *testing.T) {
 		iam.ErrCodeUnrecognizedPublicKeyEncodingException: apierror.ErrBadRequest,
 
 		iam.ErrCodeNoSuchEntityException:   apierror.ErrNotFound,
-		iam.ErrCodeServiceFailureException: apierror.ErrInternalError,
+		iam.ErrCodeServiceFailureException: apierror.ErrServiceUnavailable,
 	}
 
 	for awsErr, apiErr := range apiErrorTestCases {
+		expected := apierror.New(apiErr, "test error", awserr.New(awsErr, awsErr, nil))
 		err := ErrCode("test error", awserr.New(awsErr, awsErr, nil))
-		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
-			t.Logf("got apierror '%s'", aerr)
-		} else {
-			t.Errorf("expected cloudwatch error %s to be an apierror.Error %s, got %s", awsErr, apiErr, err)
+
+		var aerr apierror.Error
+		if !errors.As(err, &aerr) {
+			t.Errorf("expected aws error %s to be an apierror.Error %s, got %s", awsErr, apiErr, err)
+		}
+
+		if aerr.String() != expected.String() {
+			t.Errorf("expected error '%s', got '%s'", expected, aerr)
 		}
 	}
 

@@ -13,7 +13,7 @@ type DocDBCreateRequest struct {
 	EngineVersion         *string
 	MasterUsername        *string
 	MasterUserPassword    *string
-	SubnetIds             []*string
+	SubnetIds             []string
 	Tags                  Tags
 	VpcSecurityGroupIds   []*string
 }

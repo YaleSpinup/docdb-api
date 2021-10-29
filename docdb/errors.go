@@ -155,6 +155,13 @@ func ErrCode(msg string, err error) error {
 			// DBClusterIdentifier doesn't refer to an existing cluster.
 			docdb.ErrCodeDBClusterNotFoundFault,
 
+			// ErrCodeDBClusterParameterGroupNotFoundFault for service response error code
+			// "DBClusterParameterGroupNotFound".
+			//
+			// DBClusterParameterGroupName doesn't refer to an existing cluster parameter
+			// group.
+			docdb.ErrCodeDBClusterParameterGroupNotFoundFault,
+
 			// ErrCodeDBClusterSnapshotNotFoundFault for service response error code
 			// "DBClusterSnapshotNotFoundFault".
 			//
@@ -167,11 +174,29 @@ func ErrCode(msg string, err error) error {
 			// DBInstanceIdentifier doesn't refer to an existing instance.
 			docdb.ErrCodeDBInstanceNotFoundFault,
 
+			// ErrCodeDBParameterGroupNotFoundFault for service response error code
+			// "DBParameterGroupNotFound".
+			//
+			// DBParameterGroupName doesn't refer to an existing parameter group.
+			docdb.ErrCodeDBParameterGroupNotFoundFault,
+
+			// ErrCodeDBSecurityGroupNotFoundFault for service response error code
+			// "DBSecurityGroupNotFound".
+			//
+			// DBSecurityGroupName doesn't refer to an existing security group.
+			docdb.ErrCodeDBSecurityGroupNotFoundFault,
+
 			// ErrCodeDBSnapshotNotFoundFault for service response error code
 			// "DBSnapshotNotFound".
 			//
 			// DBSnapshotIdentifier doesn't refer to an existing snapshot.
 			docdb.ErrCodeDBSnapshotNotFoundFault,
+
+			// ErrCodeDBSubnetGroupNotFoundFault for service response error code
+			// "DBSubnetGroupNotFoundFault".
+			//
+			// DBSubnetGroupName doesn't refer to an existing subnet group.
+			docdb.ErrCodeDBSubnetGroupNotFoundFault,
 
 			// ErrCodeGlobalClusterNotFoundFault for service response error code
 			// "GlobalClusterNotFoundFault".

@@ -87,7 +87,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 		msgChan <- fmt.Sprintf("requested creation of docdb cluster %s", cl)
 
-		if err = retry(10, 2*time.Second, func() error {
+		if err = retry(10, 3, 10*time.Second, func() error {
 			msgChan <- fmt.Sprintf("checking if docdb cluster %s is available before continuing", cl)
 
 			// check cluster status

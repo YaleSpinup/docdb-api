@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"strings"
 	"time"
@@ -10,8 +11,8 @@ import (
 	"github.com/YaleSpinup/flywheel"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/docdb"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,18 +22,20 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 	req.Tags = req.Tags.normalize(o.org)
 
+	sgName := dbSubnetGroupName(o.org, req.SubnetIds)
+
 	// check if a DBSubnetGroup exists, and create it if needed
-	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, dbSubnetGroupName(o.org))
+	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, sgName)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if !dbSubnetGroupFound {
-		if err := o.dbSubnetGroupCreate(ctx, dbSubnetGroupName(o.org), req.SubnetIds); err != nil {
+		if err := o.dbSubnetGroupCreate(ctx, sgName, req.SubnetIds); err != nil {
 			return nil, nil, err
 		}
 	} else {
-		log.Infof("subnet group %s already exists, will use it for this docdb cluster", dbSubnetGroupName(o.org))
+		log.Infof("subnet group %s already exists, will use it for this docdb cluster", sgName)
 	}
 
 	task := flywheel.NewTask()
@@ -40,7 +43,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 	cluster, err := o.client.CreateDBCluster(ctx, &docdb.CreateDBClusterInput{
 		BackupRetentionPeriod: req.BackupRetentionPeriod,
 		DBClusterIdentifier:   req.DBClusterIdentifier,
-		DBSubnetGroupName:     aws.String(dbSubnetGroupName(o.org)),
+		DBSubnetGroupName:     aws.String(sgName),
 		Engine:                aws.String("docdb"),
 		EngineVersion:         req.EngineVersion,
 		MasterUsername:        req.MasterUsername,
@@ -84,7 +87,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 		msgChan <- fmt.Sprintf("requested creation of docdb cluster %s", cl)
 
-		if err = retry(10, 2*time.Second, func() error {
+		if err = retry(10, 3, 10*time.Second, func() error {
 			msgChan <- fmt.Sprintf("checking if docdb cluster %s is available before continuing", cl)
 
 			// check cluster status
@@ -273,17 +276,18 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 	return nil
 }
 
-// dbSubnetGroupName determines the DBSubnetGroup based on the Org
-func dbSubnetGroupName(org string) string {
-	return fmt.Sprintf("spinup-%s-docdb-subnetgroup", org)
+// dbSubnetGroupName determines the DBSubnetGroup name based on the Org and subnet id's
+// generate a 32-char MD5 hash based on all subnet id's
+func dbSubnetGroupName(org string, subnetIds []string) string {
+	return fmt.Sprintf("spinup-%s-docdb-sg-%x", org, md5.Sum([]byte(strings.Join(subnetIds, ""))))
 }
 
 // dbSubnetGroupExists checks if a DBSubnetGroup exists
 func (o *docDBOrchestrator) dbSubnetGroupExists(ctx context.Context, name string) (bool, error) {
 	result, err := o.client.GetDBSubnetGroup(ctx, name)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() == docdb.ErrCodeDBSubnetGroupNotFoundFault {
+		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
+			if aerr.Code == apierror.ErrNotFound {
 				log.Debugf("subnet group not found: %s", name)
 				return false, nil
 			} else {
@@ -295,22 +299,22 @@ func (o *docDBOrchestrator) dbSubnetGroupExists(ctx context.Context, name string
 	if len(result) == 1 {
 		return true, nil
 	} else {
-		return false, apierror.New(apierror.ErrInternalError, "unexpected number of matching subnet groups", nil)
+		return false, apierror.New(apierror.ErrInternalError, "unexpected number of matching subnet groups: "+fmt.Sprint(len(result)), nil)
 	}
 }
 
 // dbSubnetGroupCreate creates a DBSubnetGroup
-func (o *docDBOrchestrator) dbSubnetGroupCreate(ctx context.Context, name string, subnets []*string) error {
+func (o *docDBOrchestrator) dbSubnetGroupCreate(ctx context.Context, name string, subnets []string) error {
 	if subnets == nil {
 		return apierror.New(apierror.ErrBadRequest, "no subnets specified", nil)
 	}
 
-	log.Infof("creating DBSubnetGroup %s with subnets: %v", name, aws.StringValueSlice(subnets))
+	log.Infof("creating DBSubnetGroup %s with subnets: %v", name, subnets)
 
 	_, err := o.client.CreateDBSubnetGroup(ctx, &docdb.CreateDBSubnetGroupInput{
 		DBSubnetGroupDescription: aws.String(name),
 		DBSubnetGroupName:        aws.String(name),
-		SubnetIds:                subnets,
+		SubnetIds:                aws.StringSlice(subnets),
 	})
 	if err != nil {
 		return apierror.New(apierror.ErrBadRequest, "failed to create DBSubnetGroup", err)

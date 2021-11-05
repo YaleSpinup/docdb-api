@@ -43,6 +43,16 @@ func (s *server) DocumentDBCreateHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if req.SubnetIds == nil {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "SubnetIds is a required field", nil))
+		return
+	}
+
+	if len(req.SubnetIds) < 2 {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "At least 2 SubnetIds are required", nil))
+		return
+	}
+
 	orch := newDocDBOrchestrator(
 		db.New(db.WithSession(sess.Session)),
 		nil,

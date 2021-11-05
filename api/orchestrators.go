@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -8,22 +9,65 @@ import (
 	"github.com/YaleSpinup/docdb-api/docdb"
 	"github.com/YaleSpinup/docdb-api/resourcegroupstaggingapi"
 	"github.com/YaleSpinup/flywheel"
+	log "github.com/sirupsen/logrus"
 )
 
 type docDBOrchestrator struct {
-	client   docdb.DocDB
-	rgClient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
-	flywheel *flywheel.Manager
-	org      string
+	server      *server
+	sp          *sessionParams
+	docdbClient docdb.DocDB
+	rgClient    *resourcegroupstaggingapi.ResourceGroupsTaggingAPI
 }
 
-func newDocDBOrchestrator(client docdb.DocDB, rgclient *resourcegroupstaggingapi.ResourceGroupsTaggingAPI, flywheel *flywheel.Manager, org string) *docDBOrchestrator {
-	return &docDBOrchestrator{
-		client:   client,
-		rgClient: rgclient,
-		flywheel: flywheel,
-		org:      org,
+// sessionParams stores all required parameters to initialize the connection session
+type sessionParams struct {
+	role         string
+	inlinePolicy string
+	policyArns   []string
+}
+
+// newDocDBOrchestrator creates a new session and initializes all clients
+func (s *server) newDocDBOrchestrator(ctx context.Context, sp *sessionParams) (*docDBOrchestrator, error) {
+	log.Debug("initializing docDBOrchestrator")
+
+	sess, err := s.assumeRole(
+		ctx,
+		s.session.ExternalID,
+		sp.role,
+		sp.inlinePolicy,
+		sp.policyArns...,
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	return &docDBOrchestrator{
+		server:      s,
+		sp:          sp,
+		docdbClient: docdb.New(docdb.WithSession(sess.Session)),
+		rgClient:    resourcegroupstaggingapi.New(resourcegroupstaggingapi.WithSession(sess.Session)),
+	}, nil
+}
+
+// refreshSession refreshes the session for all client connections
+func (o *docDBOrchestrator) refreshSession(ctx context.Context) error {
+	log.Debug("refreshing docDBOrchestrator session")
+
+	sess, err := o.server.assumeRole(
+		ctx,
+		o.server.session.ExternalID,
+		o.sp.role,
+		o.sp.inlinePolicy,
+		o.sp.policyArns...,
+	)
+	if err != nil {
+		return err
+	}
+
+	o.docdbClient = docdb.New(docdb.WithSession(sess.Session))
+	o.rgClient = resourcegroupstaggingapi.New(resourcegroupstaggingapi.WithSession(sess.Session))
+
+	return nil
 }
 
 func newFlywheelManager(config common.Flywheel) (*flywheel.Manager, error) {

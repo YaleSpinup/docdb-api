@@ -20,9 +20,9 @@ import (
 func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCreateRequest) (*DocDBResponse, *flywheel.Task, error) {
 	log.Infof("creating documentDB cluster %s with %d instance(s)", aws.StringValue(req.DBClusterIdentifier), aws.IntValue(req.InstanceCount))
 
-	req.Tags = req.Tags.normalize(o.org)
+	req.Tags = req.Tags.normalize(o.server.org)
 
-	sgName := dbSubnetGroupName(o.org, req.SubnetIds)
+	sgName := dbSubnetGroupName(o.server.org, req.SubnetIds)
 
 	// check if a DBSubnetGroup exists, and create it if needed
 	dbSubnetGroupFound, err := o.dbSubnetGroupExists(ctx, sgName)
@@ -40,7 +40,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 	task := flywheel.NewTask()
 
-	cluster, err := o.client.CreateDBCluster(ctx, &docdb.CreateDBClusterInput{
+	cluster, err := o.docdbClient.CreateDBCluster(ctx, &docdb.CreateDBClusterInput{
 		BackupRetentionPeriod: req.BackupRetentionPeriod,
 		DBClusterIdentifier:   req.DBClusterIdentifier,
 		DBSubnetGroupName:     aws.String(sgName),
@@ -60,7 +60,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 	for i := 1; i <= aws.IntValue(req.InstanceCount); i++ {
 		instanceName := fmt.Sprintf("%s-%d", aws.StringValue(req.DBClusterIdentifier), i)
 
-		dbInstance, err := o.client.CreateDBInstance(ctx, &docdb.CreateDBInstanceInput{
+		dbInstance, err := o.docdbClient.CreateDBInstance(ctx, &docdb.CreateDBInstanceInput{
 			AutoMinorVersionUpgrade: aws.Bool(true),
 			DBInstanceClass:         req.DBInstanceClass,
 			DBClusterIdentifier:     req.DBClusterIdentifier,
@@ -90,8 +90,13 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		if err = retry(10, 3, 10*time.Second, func() error {
 			msgChan <- fmt.Sprintf("checking if docdb cluster %s is available before continuing", cl)
 
+			if err := o.refreshSession(ctx); err != nil {
+				msgChan <- fmt.Sprintf("unable to refresh orchestrator session: %s", err)
+				return err
+			}
+
 			// check cluster status
-			cluster, err := o.client.GetDocDBDetails(taskCtx, cl)
+			cluster, err := o.docdbClient.GetDocDBDetails(taskCtx, cl)
 			if err != nil {
 				msgChan <- fmt.Sprintf("got error checking if docdb cluster %s is available: %s", cl, err)
 				return err
@@ -103,7 +108,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 			}
 
 			// check instances
-			instances, err := o.client.GetDocDBInstances(taskCtx, cl)
+			instances, err := o.docdbClient.GetDocDBInstances(taskCtx, cl)
 			if err != nil {
 				msgChan <- fmt.Sprintf("got error describing docdb instances for %s: %s", cl, err)
 				return err
@@ -137,7 +142,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 
 // documentDBList lists all documentDB clusters
 func (o *docDBOrchestrator) documentDBList(ctx context.Context) ([]string, error) {
-	out, err := o.rgClient.GetResourcesInOrg(ctx, o.org, "database", "docdb")
+	out, err := o.rgClient.GetResourcesInOrg(ctx, o.server.org, "database", "docdb")
 	if err != nil {
 		return nil, err
 	}
@@ -166,18 +171,18 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	cluster, err := o.client.GetDocDBDetails(ctx, name)
+	cluster, err := o.docdbClient.GetDocDBDetails(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := o.client.GetDocDBTags(ctx, cluster.DBClusterArn)
+	t, err := o.docdbClient.GetDocDBTags(ctx, cluster.DBClusterArn)
 	if err != nil {
 		return nil, err
 	}
 	tags := fromDocDBTags(t)
 
-	if !tags.inOrg(o.org) {
+	if !tags.inOrg(o.server.org) {
 		return nil, apierror.New(apierror.ErrNotFound, "cluster not found in our org", nil)
 	}
 
@@ -193,13 +198,13 @@ func (o *docDBOrchestrator) documentDBModify(ctx context.Context, name string, r
 		return nil, apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	documentDB, err := o.client.GetDocDBDetails(ctx, name)
+	documentDB, err := o.docdbClient.GetDocDBDetails(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
 	// modify cluster parameters
-	cluster, err := o.client.ModifyDBCluster(ctx, &docdb.ModifyDBClusterInput{
+	cluster, err := o.docdbClient.ModifyDBCluster(ctx, &docdb.ModifyDBClusterInput{
 		ApplyImmediately:       aws.Bool(true),
 		BackupRetentionPeriod:  req.BackupRetentionPeriod,
 		DBClusterIdentifier:    aws.String(name),
@@ -217,7 +222,7 @@ func (o *docDBOrchestrator) documentDBModify(ctx context.Context, name string, r
 	// if needed, loop through all the cluster instances and modify them
 	if req.DBInstanceClass != nil {
 		for _, i := range documentDB.DBClusterMembers {
-			dbInstance, err := o.client.ModifyDBInstance(ctx, &docdb.ModifyDBInstanceInput{
+			dbInstance, err := o.docdbClient.ModifyDBInstance(ctx, &docdb.ModifyDBInstanceInput{
 				ApplyImmediately:     aws.Bool(true),
 				DBInstanceIdentifier: i.DBInstanceIdentifier,
 				DBInstanceClass:      req.DBInstanceClass,
@@ -242,7 +247,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
 	}
 
-	documentDB, err := o.client.GetDocDBDetails(ctx, name)
+	documentDB, err := o.docdbClient.GetDocDBDetails(ctx, name)
 	if err != nil {
 		return err
 	}
@@ -251,7 +256,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 
 	// first loop through all the cluster instances and delete them
 	for _, i := range documentDB.DBClusterMembers {
-		_, err := o.client.DeleteDBInstance(ctx, &docdb.DeleteDBInstanceInput{
+		_, err := o.docdbClient.DeleteDBInstance(ctx, &docdb.DeleteDBInstanceInput{
 			DBInstanceIdentifier: i.DBInstanceIdentifier,
 		})
 		if err != nil {
@@ -269,7 +274,7 @@ func (o *docDBOrchestrator) documentDBDelete(ctx context.Context, name string, s
 		input.FinalDBSnapshotIdentifier = aws.String("final-" + name)
 	}
 
-	if _, err = o.client.DeleteDBCluster(ctx, &input); err != nil {
+	if _, err = o.docdbClient.DeleteDBCluster(ctx, &input); err != nil {
 		return err
 	}
 
@@ -284,7 +289,7 @@ func dbSubnetGroupName(org string, subnetIds []string) string {
 
 // dbSubnetGroupExists checks if a DBSubnetGroup exists
 func (o *docDBOrchestrator) dbSubnetGroupExists(ctx context.Context, name string) (bool, error) {
-	result, err := o.client.GetDBSubnetGroup(ctx, name)
+	result, err := o.docdbClient.GetDBSubnetGroup(ctx, name)
 	if err != nil {
 		if aerr, ok := errors.Cause(err).(apierror.Error); ok {
 			if aerr.Code == apierror.ErrNotFound {
@@ -311,7 +316,7 @@ func (o *docDBOrchestrator) dbSubnetGroupCreate(ctx context.Context, name string
 
 	log.Infof("creating DBSubnetGroup %s with subnets: %v", name, subnets)
 
-	_, err := o.client.CreateDBSubnetGroup(ctx, &docdb.CreateDBSubnetGroupInput{
+	_, err := o.docdbClient.CreateDBSubnetGroup(ctx, &docdb.CreateDBSubnetGroupInput{
 		DBSubnetGroupDescription: aws.String(name),
 		DBSubnetGroupName:        aws.String(name),
 		SubnetIds:                aws.StringSlice(subnets),
@@ -334,7 +339,7 @@ func (o *docDBOrchestrator) startTask(ctx context.Context, task *flywheel.Task) 
 		taskCtx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		if err := o.flywheel.Start(taskCtx, task); err != nil {
+		if err := o.server.flywheel.Start(taskCtx, task); err != nil {
 			log.Errorf("failed to start flywheel task, won't be tracked: %s", err)
 		}
 
@@ -343,17 +348,17 @@ func (o *docDBOrchestrator) startTask(ctx context.Context, task *flywheel.Task) 
 			case msg := <-msgChan:
 				log.Info(msg)
 
-				if ferr := o.flywheel.CheckIn(taskCtx, task.ID); ferr != nil {
+				if ferr := o.server.flywheel.CheckIn(taskCtx, task.ID); ferr != nil {
 					log.Errorf("failed to checkin task %s: %s", task.ID, ferr)
 				}
 
-				if ferr := o.flywheel.Log(taskCtx, task.ID, msg); ferr != nil {
+				if ferr := o.server.flywheel.Log(taskCtx, task.ID, msg); ferr != nil {
 					log.Errorf("failed to log flywheel message for %s: %s", task.ID, ferr)
 				}
 			case err := <-errChan:
 				log.Error(err)
 
-				if ferr := o.flywheel.Fail(taskCtx, task.ID, err.Error()); ferr != nil {
+				if ferr := o.server.flywheel.Fail(taskCtx, task.ID, err.Error()); ferr != nil {
 					log.Errorf("failed to fail flywheel task %s: %s", task.ID, ferr)
 				}
 
@@ -361,7 +366,7 @@ func (o *docDBOrchestrator) startTask(ctx context.Context, task *flywheel.Task) 
 			case <-ctx.Done():
 				log.Infof("marking task %s complete", task.ID)
 
-				if ferr := o.flywheel.Complete(taskCtx, task.ID); ferr != nil {
+				if ferr := o.server.flywheel.Complete(taskCtx, task.ID); ferr != nil {
 					log.Errorf("failed to complete flywheel task %s: %s", task.ID, ferr)
 				}
 

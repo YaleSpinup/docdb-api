@@ -36,14 +36,14 @@ func TestErrCode(t *testing.T) {
 		docdb.ErrCodeDBUpgradeDependencyFailureFault:     apierror.ErrConflict,
 
 		docdb.ErrCodeAuthorizationNotFoundFault:         apierror.ErrBadRequest,
-		docdb.ErrCodeDBSecurityGroupNotFoundFault:       apierror.ErrBadRequest,
 		docdb.ErrCodeDBSubnetGroupDoesNotCoverEnoughAZs: apierror.ErrBadRequest,
-		docdb.ErrCodeDBSubnetGroupNotFoundFault:         apierror.ErrBadRequest,
 
 		docdb.ErrCodeDBClusterNotFoundFault:         apierror.ErrNotFound,
 		docdb.ErrCodeDBClusterSnapshotNotFoundFault: apierror.ErrNotFound,
 		docdb.ErrCodeDBInstanceNotFoundFault:        apierror.ErrNotFound,
 		docdb.ErrCodeDBSnapshotNotFoundFault:        apierror.ErrNotFound,
+		docdb.ErrCodeDBSecurityGroupNotFoundFault:   apierror.ErrNotFound,
+		docdb.ErrCodeDBSubnetGroupNotFoundFault:     apierror.ErrNotFound,
 		docdb.ErrCodeGlobalClusterNotFoundFault:     apierror.ErrNotFound,
 		docdb.ErrCodeResourceNotFoundFault:          apierror.ErrNotFound,
 

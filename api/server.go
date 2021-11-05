@@ -203,10 +203,9 @@ func retry(attempts int, doubling int, sleep time.Duration, f func() error) erro
 			time.Sleep(sleep)
 			if doubling--; doubling > 0 {
 				return retry(attempts, doubling, 2*sleep, f)
-			} else {
-				// stop doubling the sleep interval after some point to prevent it from getting too big
-				return retry(attempts, doubling, sleep, f)
 			}
+			// stop doubling the sleep interval after some point to prevent it from getting too big
+			return retry(attempts, 0, sleep, f)
 		}
 		return err
 	}

@@ -90,7 +90,7 @@ func (o *docDBOrchestrator) documentDBCreate(ctx context.Context, req *DocDBCrea
 		if err = retry(10, 3, 10*time.Second, func() error {
 			msgChan <- fmt.Sprintf("checking if docdb cluster %s is available before continuing", cl)
 
-			if err := o.refreshSession(ctx); err != nil {
+			if err := o.refreshSession(taskCtx); err != nil {
 				msgChan <- fmt.Sprintf("unable to refresh orchestrator session: %s", err)
 				return err
 			}
@@ -346,7 +346,7 @@ func (o *docDBOrchestrator) startTask(ctx context.Context, task *flywheel.Task) 
 		for {
 			select {
 			case msg := <-msgChan:
-				log.Info(msg)
+				log.Infof("task %s: %s", task.ID, msg)
 
 				if ferr := o.server.flywheel.CheckIn(taskCtx, task.ID); ferr != nil {
 					log.Errorf("failed to checkin task %s: %s", task.ID, ferr)

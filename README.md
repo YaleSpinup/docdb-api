@@ -44,7 +44,8 @@ POST `/v1/docdb/{account}`
     { "Key": "CreatedBy", "Value": "me"}
   ],
   "VpcSecurityGroupIds": ["sg-0123456789abcdef0"]
-}```
+}
+```
 
 | Response Code                 | Definition                      |
 | ----------------------------- | --------------------------------|
@@ -284,7 +285,8 @@ PUT `/v1/docdb/{account}/{name}`
   "BackupRetentionPeriod": 2,
   "DBInstanceClass": "db.r5.large",
   "MasterUserPassword": "newexamplepassword"
-}```
+}
+```
 
 | Response Code                 | Definition                      |
 | ----------------------------- | --------------------------------|

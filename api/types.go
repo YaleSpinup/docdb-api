@@ -37,3 +37,7 @@ type DocDBResponse struct {
 	Instances []*docdb.DBInstance `json:",omitempty"`
 	Tags      Tags                `json:",omitempty"`
 }
+
+type docDBInstanceStateChangeRequest struct {
+	State string `json:"state"`
+}

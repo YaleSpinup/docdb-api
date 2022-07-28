@@ -34,5 +34,6 @@ func (s *server) routes() {
 	api.HandleFunc("/{account}", s.DocumentDBListHandler).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/{name}", s.DocumentDBGetHandler).Methods(http.MethodGet)
 	api.HandleFunc("/{account}/{name}", s.DocumentDBModifyHandler).Methods(http.MethodPut)
+	api.HandleFunc("/{account}/{name}/power", s.DocumentDBStateHandler).Methods(http.MethodPut)
 	api.HandleFunc("/{account}/{name}", s.DocumentDBDeleteHandler).Methods(http.MethodDelete)
 }

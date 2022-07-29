@@ -238,11 +238,18 @@ func (s *server) DocumentDBStateHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	policy, err := generatePolicy([]string{"rds:StartDBCluster", "rds:StopDBCluster"})
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
 	orch, err := s.newDocDBOrchestrator(
 		r.Context(),
 		&sessionParams{
-			role:       fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName),
-			policyArns: []string{"arn:aws:iam::aws:policy/AmazonDocDBFullAccess"},
+			role:         fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName),
+			inlinePolicy: policy,
+			policyArns:   []string{"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess"},
 		},
 	)
 	if err != nil {

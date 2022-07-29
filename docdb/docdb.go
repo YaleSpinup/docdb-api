@@ -308,6 +308,7 @@ func (d *DocDB) StartDBCluster(ctx context.Context, name string) error {
 	if _, err := d.Service.StartDBClusterWithContext(ctx, inp); err != nil {
 		return ErrCode("starting instance", err)
 	}
+
 	return nil
 }
 
@@ -324,5 +325,6 @@ func (d *DocDB) StopDBCluster(ctx context.Context, name string) error {
 	if _, err := d.Service.StopDBClusterWithContext(ctx, input); err != nil {
 		return ErrCode("stoping instance", err)
 	}
+
 	return nil
 }

@@ -377,3 +377,21 @@ func (o *docDBOrchestrator) startTask(ctx context.Context, task *flywheel.Task) 
 
 	return msgChan, errChan
 }
+
+// docDBState is used to start and stop a given instance
+func (o *docDBOrchestrator) docDBState(ctx context.Context, state string, name string) error {
+	if state == "" || name == "" {
+		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	state = strings.ToLower(state)
+	switch state {
+	case "start":
+		return o.docdbClient.StartDBCluster(ctx, name)
+	case "stop":
+		return o.docdbClient.StopDBCluster(ctx, name)
+	default:
+		msg := fmt.Sprintf("unknown power state %q", state)
+		return apierror.New(apierror.ErrBadRequest, msg, nil)
+	}
+}

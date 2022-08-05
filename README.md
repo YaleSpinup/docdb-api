@@ -209,50 +209,130 @@ GET `/v1/docdb/{account}/{name}`
     "Cluster": {
         "AssociatedRoles": null,
         "AvailabilityZones": [
-            "us-east-1f",
+            "us-east-1c",
             "us-east-1d",
             "us-east-1a"
         ],
-        "BackupRetentionPeriod": 1,
-        "ClusterCreateTime": "2021-08-05T13:23:03.003Z",
-        "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:mydocdb",
-        "DBClusterIdentifier": "mydocdb",
+        "BackupRetentionPeriod": 2,
+        "CloneGroupId": null,
+        "ClusterCreateTime": "2022-07-26T18:27:59.637Z",
+        "DBClusterArn": "arn:aws:rds:us-east-1:846761448161:cluster:mydocdbtest6",
+        "DBClusterIdentifier": "mydocdbtest6",
         "DBClusterMembers": [
             {
-                "DBClusterParameterGroupStatus": "in-sync",
-                "DBInstanceIdentifier": "mydocdb-1",
+                "DBClusterParameterGroupStatus": "pending-reboot",
+                "DBInstanceIdentifier": "mydocdbtest6-1",
                 "IsClusterWriter": true,
                 "PromotionTier": 1
             }
         ],
         "DBClusterParameterGroup": "default.docdb4.0",
-        "DBSubnetGroup": "spinup-example-docdb-subnetgroup",
-        "DbClusterResourceId": "cluster-IBME365R7OUKGHZYEOHDJWLBSQ",
+        "DBSubnetGroup": "spinup-sstst-docdb-sg-978a1196bb9d66ab4719430076a4fb32",
+        "DbClusterResourceId": "cluster-DEFNCEDHIN2HCEG7I66RU47RQU",
         "DeletionProtection": false,
-        "EarliestRestorableTime": "2021-08-05T13:23:43.551Z",
+        "EarliestRestorableTime": "2022-07-27T18:46:22.123Z",
         "EnabledCloudwatchLogsExports": null,
-        "Endpoint": "mydocdb.cluster-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "Endpoint": "mydocdbtest6.cluster-c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
         "Engine": "docdb",
         "EngineVersion": "4.0.0",
-        "HostedZoneId": "ZZXXYY5TT8WVW",
-        "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/11aa0000-8fcb-4e65-abb4-eed7f4a012f7",
-        "LatestRestorableTime": "2021-08-05T13:23:43.551Z",
+        "HostedZoneId": "ZNKXH85TT8WVW",
+        "KmsKeyId": "arn:aws:kms:us-east-1:846761448161:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
+        "LatestRestorableTime": "2022-07-29T18:50:12.667Z",
         "MasterUsername": "dadmin",
         "MultiAZ": false,
         "PercentProgress": null,
         "Port": 27017,
-        "PreferredBackupWindow": "08:41-09:11",
-        "PreferredMaintenanceWindow": "mon:10:08-mon:10:38",
-        "ReaderEndpoint": "mydocdb.cluster-ro-z0ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
-        "Status": "available",
+        "PreferredBackupWindow": "09:03-09:33",
+        "PreferredMaintenanceWindow": "mon:03:46-mon:04:16",
+        "ReadReplicaIdentifiers": null,
+        "ReaderEndpoint": "mydocdbtest6.cluster-ro-c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+        "ReplicationSourceIdentifier": null,
+        "Status": "stopped",
         "StorageEncrypted": true,
         "VpcSecurityGroups": [
             {
                 "Status": "active",
-                "VpcSecurityGroupId": "sg-0abcdef1234567890"
+                "VpcSecurityGroupId": "sg-0b682be8cf9c58bbe"
             }
         ]
     },
+    "Instances": [
+        {
+            "AutoMinorVersionUpgrade": true,
+            "AvailabilityZone": "us-east-1a",
+            "BackupRetentionPeriod": 2,
+            "CACertificateIdentifier": "rds-ca-2019",
+            "CopyTagsToSnapshot": false,
+            "DBClusterIdentifier": "mydocdbtest6",
+            "DBInstanceArn": "arn:aws:rds:us-east-1:846761448161:db:mydocdbtest6-1",
+            "DBInstanceClass": "db.r5.large",
+            "DBInstanceIdentifier": "mydocdbtest6-1",
+            "DBInstanceStatus": "stopped",
+            "DBSubnetGroup": {
+                "DBSubnetGroupArn": null,
+                "DBSubnetGroupDescription": "spinup-sstst-docdb-sg-978a1196bb9d66ab4719430076a4fb32",
+                "DBSubnetGroupName": "spinup-sstst-docdb-sg-978a1196bb9d66ab4719430076a4fb32",
+                "SubnetGroupStatus": "Complete",
+                "Subnets": [
+                    {
+                        "SubnetAvailabilityZone": {
+                            "Name": "us-east-1d"
+                        },
+                        "SubnetIdentifier": "subnet-de7a37f4",
+                        "SubnetStatus": "Active"
+                    },
+                    {
+                        "SubnetAvailabilityZone": {
+                            "Name": "us-east-1a"
+                        },
+                        "SubnetIdentifier": "subnet-36b68b40",
+                        "SubnetStatus": "Active"
+                    }
+                ],
+                "VpcId": "vpc-8bb612ec"
+            },
+            "DbiResourceId": "db-CJNY2XLD3HRDUYU5736HVAXFTA",
+            "EnabledCloudwatchLogsExports": null,
+            "Endpoint": {
+                "Address": "mydocdbtest6-1.c9ukc6s0rmbg.us-east-1.docdb.amazonaws.com",
+                "HostedZoneId": "ZNKXH85TT8WVW",
+                "Port": 27017
+            },
+            "Engine": "docdb",
+            "EngineVersion": "4.0.0",
+            "InstanceCreateTime": "2022-07-26T18:32:35.634Z",
+            "KmsKeyId": "arn:aws:kms:us-east-1:846761448161:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
+            "LatestRestorableTime": null,
+            "PendingModifiedValues": {
+                "AllocatedStorage": null,
+                "BackupRetentionPeriod": null,
+                "CACertificateIdentifier": null,
+                "DBInstanceClass": null,
+                "DBInstanceIdentifier": null,
+                "DBSubnetGroupName": null,
+                "EngineVersion": null,
+                "Iops": null,
+                "LicenseModel": null,
+                "MasterUserPassword": null,
+                "MultiAZ": null,
+                "PendingCloudwatchLogsExports": null,
+                "Port": null,
+                "StorageType": null
+            },
+            "PreferredBackupWindow": "09:03-09:33",
+            "PreferredMaintenanceWindow": "tue:06:34-tue:07:04",
+            "PromotionTier": 1,
+            "PubliclyAccessible": false,
+            "StatusInfos": null,
+            "StorageEncrypted": true,
+            "VpcSecurityGroups": [
+                {
+                    "Status": "active",
+                    "VpcSecurityGroupId": "sg-0b682be8cf9c58bbe"
+                }
+            ]
+        }
+    ],
     "Tags": [
         {
             "Key": "spinup:flavor",
@@ -264,7 +344,7 @@ GET `/v1/docdb/{account}/{name}`
         },
         {
             "Key": "spinup:org",
-            "Value": "localdev"
+            "Value": "sstst"
         },
         {
             "Key": "spinup:type",
@@ -483,5 +563,5 @@ Tenyo Grozev <tenyo.grozev@yale.edu>
 
 ## License
 
-GNU Affero General Public License v3.0 (GNU AGPLv3)  
+GNU Affero General Public License v3.0 (GNU AGPLv3)
 Copyright © 2021 Yale University

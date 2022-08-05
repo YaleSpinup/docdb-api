@@ -294,3 +294,37 @@ func (d *DocDB) ModifyDBInstance(ctx context.Context, input *docdb.ModifyDBInsta
 
 	return out.DBInstance, nil
 }
+
+func (d *DocDB) StartDBCluster(ctx context.Context, name string) error {
+	if name == "" {
+		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Infof("starting documentDB cluster: %s", name)
+	inp := &docdb.StartDBClusterInput{
+		DBClusterIdentifier: aws.String(name),
+	}
+
+	if _, err := d.Service.StartDBClusterWithContext(ctx, inp); err != nil {
+		return ErrCode("starting instance", err)
+	}
+
+	return nil
+}
+
+func (d *DocDB) StopDBCluster(ctx context.Context, name string) error {
+	if name == "" {
+		return apierror.New(apierror.ErrBadRequest, "invalid input", nil)
+	}
+
+	log.Infof("stoping documentDB cluster: %s", name)
+	input := &docdb.StopDBClusterInput{
+		DBClusterIdentifier: aws.String(name),
+	}
+
+	if _, err := d.Service.StopDBClusterWithContext(ctx, input); err != nil {
+		return ErrCode("stoping instance", err)
+	}
+
+	return nil
+}

@@ -218,3 +218,49 @@ func (s *server) DocumentDBModifyHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
 }
+
+// DocumentDBStateHandler Starts/Stops a DocumentDB cluster and instance(s)
+func (s *server) DocumentDBStateHandler(w http.ResponseWriter, r *http.Request) {
+	w = LogWriter{w}
+	vars := mux.Vars(r)
+	account := vars["account"]
+	name := vars["name"]
+
+	req := &docDBInstanceStateChangeRequest{}
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		msg := fmt.Sprintf("cannot decode body into change power input: %s", err)
+		handleError(w, apierror.New(apierror.ErrBadRequest, msg, err))
+		return
+	}
+
+	if req.State == "" {
+		handleError(w, apierror.New(apierror.ErrBadRequest, "missing required field: state", nil))
+		return
+	}
+
+	policy, err := generatePolicy([]string{"rds:StartDBCluster", "rds:StopDBCluster"})
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	orch, err := s.newDocDBOrchestrator(
+		r.Context(),
+		&sessionParams{
+			role:         fmt.Sprintf("arn:aws:iam::%s:role/%s", account, s.session.RoleName),
+			inlinePolicy: policy,
+			policyArns:   []string{"arn:aws:iam::aws:policy/AmazonDocDBReadOnlyAccess"},
+		},
+	)
+	if err != nil {
+		handleError(w, errors.Wrap(err, "unable to create docdb orchestrator"))
+		return
+	}
+
+	if err := orch.docDBState(r.Context(), req.State, name); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -216,7 +216,7 @@ GET `/v1/docdb/{account}/{name}`
         "BackupRetentionPeriod": 2,
         "CloneGroupId": null,
         "ClusterCreateTime": "2022-07-26T18:27:59.637Z",
-        "DBClusterArn": "arn:aws:rds:us-east-1:846761448161:cluster:mydocdbtest6",
+        "DBClusterArn": "arn:aws:rds:us-east-1:123456789012:cluster:mydocdbtest6",
         "DBClusterIdentifier": "mydocdbtest6",
         "DBClusterMembers": [
             {
@@ -236,7 +236,7 @@ GET `/v1/docdb/{account}/{name}`
         "Engine": "docdb",
         "EngineVersion": "4.0.0",
         "HostedZoneId": "ZNKXH85TT8WVW",
-        "KmsKeyId": "arn:aws:kms:us-east-1:846761448161:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
+        "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
         "LatestRestorableTime": "2022-07-29T18:50:12.667Z",
         "MasterUsername": "dadmin",
         "MultiAZ": false,
@@ -264,7 +264,7 @@ GET `/v1/docdb/{account}/{name}`
             "CACertificateIdentifier": "rds-ca-2019",
             "CopyTagsToSnapshot": false,
             "DBClusterIdentifier": "mydocdbtest6",
-            "DBInstanceArn": "arn:aws:rds:us-east-1:846761448161:db:mydocdbtest6-1",
+            "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:mydocdbtest6-1",
             "DBInstanceClass": "db.r5.large",
             "DBInstanceIdentifier": "mydocdbtest6-1",
             "DBInstanceStatus": "stopped",
@@ -301,7 +301,7 @@ GET `/v1/docdb/{account}/{name}`
             "Engine": "docdb",
             "EngineVersion": "4.0.0",
             "InstanceCreateTime": "2022-07-26T18:32:35.634Z",
-            "KmsKeyId": "arn:aws:kms:us-east-1:846761448161:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
+            "KmsKeyId": "arn:aws:kms:us-east-1:123456789012:key/91c73e09-8fcb-4e65-abb4-eed7f4a012f7",
             "LatestRestorableTime": null,
             "PendingModifiedValues": {
                 "AllocatedStorage": null,

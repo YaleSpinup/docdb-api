@@ -186,9 +186,15 @@ func (o *docDBOrchestrator) documentDBDetails(ctx context.Context, name string) 
 		return nil, apierror.New(apierror.ErrNotFound, "cluster not found in our org", nil)
 	}
 
+	instances, err := o.docdbClient.GetDocDBInstances(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DocDBResponse{
-		Cluster: cluster,
-		Tags:    tags,
+		Cluster:   cluster,
+		Instances: instances,
+		Tags:      tags,
 	}, nil
 }
 

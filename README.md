@@ -507,6 +507,26 @@ PUT `/v1/docdb/{account}/{name}`
 }
 ```
 
+### Starting and Stopping a docdb cluster
+
+The modify request is used for starting and stopping a docdb cluster
+
+PUT `/v1/docdb/{account}/{name}/power`
+
+```json
+{
+   "state": "start|stop"
+}
+```
+
+| Response Code                 | Definition                      |
+| ----------------------------- | --------------------------------|
+| **200 OK**                    | success modifying docdb cluster |
+| **400 Bad Request**           | badly formed request            |
+| **403 Forbidden**             | bad token or fail to assume role|
+| **404 Not Found**             | account not found               |
+| **500 Internal Server Error** | a server error occurred         |
+
 ### Delete docdb cluster
 
 Specify `snapshot=true` to create a final snapshot before deleting the cluster. By default, no snapshot will be created.

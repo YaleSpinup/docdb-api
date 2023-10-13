@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/YaleSpinup/apierror v0.1.0
 	github.com/YaleSpinup/flywheel v0.3.0
-	github.com/aws/aws-sdk-go v1.44.62
+	github.com/aws/aws-sdk-go v1.45.25
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -28,7 +28,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
